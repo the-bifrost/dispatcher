@@ -1,6 +1,9 @@
 version = 1
 disable_existing_loggers = false
 
+#
+# Formatters
+#
 [formatters.simple]
 format = "%(levelname)s: %(message)s"
 
@@ -8,6 +11,9 @@ format = "%(levelname)s: %(message)s"
 format  = "[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s"
 datefmt = "%Y-%m-%dT%H:%M:%S%z"
 
+#
+# Handlers
+#
 [handlers.console]
 class     = "logging.StreamHandler"
 level     = "DEBUG"
@@ -22,6 +28,9 @@ filename    = "logs/bifrost.log"
 maxBytes    = 50000
 backupCount = 3
 
+#
+# Loggers
+#
 [loggers."protocols.mqtt_handler"]
 level     = "DEBUG"
 handlers  = ["console", "file"]
