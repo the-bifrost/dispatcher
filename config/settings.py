@@ -1,6 +1,7 @@
 from pathlib import Path
 
 DEVICE_REGISTRY_PATH = Path(__file__).parent / "devices.json"
+LOGGER_CONFIG_PATH = Path(__file__).parent / "logging_config.json"
 
 UART_PORTS = [
   '/dev/ttyS0',

@@ -1,30 +1,44 @@
+import json
 import logging
+import logging.config
 import time
 
-from config.settings import UART_PORTS, BAUD_RATE, MQTT_BROKER, MQTT_PORT, DEVICE_REGISTRY_PATH
+from pathlib import Path
+
 from protocols import MQTTHandler, SerialHandler
+from utils.config_loader import load_config
 from utils.envelope import make_envelope, serialize
 from utils.registry import DeviceRegistry
+
+cfg = load_config("config/config.toml")
+
+logger = logging.getLogger()
+
+def setup_logging():
+    logger_config = load_config(cfg.paths.logger_config)
+    logging.config.dictConfig(logger_config)
 
 # main()
 # - Inicializa a comunicação com as unidades de cada protocolo e monitora recebimentos.
 # - Se a mensagem recebida for válida, despacha para unidade de destino.
 def main():
-    print("Iniciando Dispatcher...")
+    setup_logging()
+
+    logger.info("Iniciando Dispatcher...")
 
     # Carrega o Registro de Dispositivos, com o protoclo e endereço/tópico de cada um.
-    registry = DeviceRegistry(DEVICE_REGISTRY_PATH)
+    registry = DeviceRegistry(Path(__file__).parent / cfg.paths.device_registry)
     
     # Instanciando o objeto de cada comunicação.
     #
     # - Comunicações do próprio Rasp devem ter sua própria Classe, como o MQTT.
     # - Comunicações via serial devem ser declaradas usando a Classe SerialHandler.
     handlers = {
-        "MQTT": MQTTHandler(MQTT_BROKER, MQTT_PORT),
-        "espnow": SerialHandler(UART_PORTS[2], BAUD_RATE),
+        "MQTT": MQTTHandler(cfg.mqtt.broker, cfg.mqtt.port),
+        "espnow": SerialHandler(cfg.uart.ports[2], cfg.uart.baudrate),
     }
 
-    print("Dispatcher Iniciado!")
+    logger.info("Dispatcher Iniciado!")
 
     # Faz a leitura contínua de todos os protocolos configurados.
     #  - Sempre que receber uma mensagem, envia para o dispatcher.
@@ -41,13 +55,11 @@ def main():
         for handler in handlers.values():
             handler.close()
 
-        print("Encerrando.")
+        logger.info("Encerrando Dispatcher...")        
         exit(1)
 
 # dispatch()
 #   - Salva o endereço do remetente, o ID do destinatário e o tipo de mensagem.
-
-
 #   - Confere se a mensagem recebida tem um destinatário válido.
 #   - Confere se esse destinatário possui um protocolo cadastrado.
 #   - Envia de acordo com protocolo e destino.
@@ -64,21 +76,22 @@ def dispatch(message: dict, registry: DeviceRegistry, handlers: dict):
         return
 
     # 2) Se o remetente é desconhecido, pede para se registrar
-    #info = registry.get_by_address(source_address)
+    info = registry.get_by_address(source_address)
 
-    #if info is None:
-    #    request_for_register(source_address, source_handler)
-    #    return
+    if info is None:
+        source_handler = message.get("protocol")
+        request_for_register(source_address, handlers[source_handler])
+        return
 
     # 3) Roteia mensagens válidas
     if destination_id == "central":
-        print(f"[CENTRAL] {source_address} -> central:", message.get("payload"))
+        logger.info("[CENTRAL] %s -> central: %s", source_address, message.get("payload"))
     
     # 4) Roteia Mensagens para outros dispositivos
     destination_info = registry.get_by_id(destination_id)
 
     if not destination_info:
-        print(f"[DISPATCHER] Destino '{destination_id}' não cadastrado.")
+        logger.debug("[DISPATCHER] Destino '%s' não cadastrado", destination_id)
         return
 
     destination_protocol = destination_info["protocol"]
@@ -87,11 +100,11 @@ def dispatch(message: dict, registry: DeviceRegistry, handlers: dict):
     if destination_handler:
         message["dst"] = destination_info.get("adress") or destination_info.get("topic")
         destination_handler.handleMessage(destination_info=destination_info, message=message)
-        print(f"[DISPATCHER] {source_address} → {destination_info} via {destination_protocol}")
+        logger.info("[DISPATCHER] '%s' → '%s' via '%s'", source_address, destination_info, destination_protocol)
 
     # 5) Mensagens ignoradas (descomentar para debugging)
     else:
-        print(f"[DISPATCHER] Protocolo {destination_protocol} não implementado.")
+        logger.debug("[DISPATCHER] Protocolo %s não implementado.", destination_protocol)
 
 # register_new_device()
 #   - Recebe o dict da mensagem, o endereço do destinatário.
@@ -102,23 +115,14 @@ def register_new_device(message: dict, registry: DeviceRegistry, handlers):
     source_address  = message.get("src")
     device_protocol = message.get("protocol")
 
-    registry.add(device_id=device_id, address=source_address, protocol=device_protocol)
-
-    # Enviando resposta para o dispositivo.
-    response = make_envelope(
-        src = "central",
-        dst = source_address,
-        msg_type = "register_response",
-        payload = {"status":"registered", "id":device_id}
-    )
-
+    response = registry.add(device_id=device_id, address=source_address, protocol=device_protocol)
     handlers[device_protocol].send(serialize(response))
-    print(f"[REGISTRY] Novo dispositivo '{device_id}' @ {source_address}")
+
 
 # request_for_register()
 #   - Monta o JSON para requisitar os dados do dispositivo.
 #   - Envia a requisição.
-def request_for_register(source_address: str, source_handler):
+def request_for_register(source_address: str, handler):
 
     request = make_envelope(
         src = "central",
@@ -127,8 +131,8 @@ def request_for_register(source_address: str, source_handler):
         payload={"status":"not_registered"}
     )
 
-    source_handler.send(serialize(request))
-    print(f"[DISPATCHER] {source_address} não cadastrado, solicitação de registro enviada.")
+    handler.send(serialize(request))
+    logger.debug("[DISPATCHER] %s não cadastrado, solicitação de registro enviada.", source_address)
     return
 
 if __name__ == "__main__":
