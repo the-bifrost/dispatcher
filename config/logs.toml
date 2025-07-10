@@ -18,7 +18,7 @@ stream    = "ext://sys.stderr"
 class       = "logging.handlers.RotatingFileHandler"
 level       = "DEBUG"
 formatter   = "detailed"
-filename    = "dispatcher/logs/bifrost.log"
+filename    = "logs/bifrost.log"
 maxBytes    = 50000
 backupCount = 3
 
