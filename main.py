@@ -121,7 +121,11 @@ def register_new_device(message: dict, registry: DeviceRegistry, handlers):
 # request_for_register()
 #   - Monta o JSON para requisitar os dados do dispositivo.
 #   - Envia a requisição.
-def request_for_register(source_address: str, handler):
+def request_for_register(source_address: str, handler) -> bool:
+
+    if not handler:
+        logger.error("request_for_register() -> HANDLER tem valor nulo")
+        return False
 
     request = make_envelope(
         src = "central",
@@ -132,7 +136,7 @@ def request_for_register(source_address: str, handler):
 
     handler.send(serialize(request))
     logger.debug("[DISPATCHER] %s não cadastrado, solicitação de registro enviada.", source_address)
-    return
+    return True
 
 if __name__ == "__main__":
     main()
