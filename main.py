@@ -34,7 +34,7 @@ def main():
     # - Comunicações via serial devem ser declaradas usando a Classe SerialHandler.
     handlers = {
         "MQTT": MQTTHandler(cfg.mqtt.broker, cfg.mqtt.port),
-        "espnow": SerialHandler(cfg.uart.ports[2], cfg.uart.baudrate),
+        "espnow": SerialHandler(cfg.uart.ports[1], cfg.uart.baudrate),
     }
 
     logger.info("Dispatcher Iniciado!")
@@ -79,7 +79,7 @@ def dispatch(message: dict, registry: DeviceRegistry, handlers: dict):
 
     if info is None:
         source_handler = message.get("protocol")
-        request_for_register(source_address, handlers[source_handler])
+        request_for_register(source_address, handlers.get(source_handler))
         return
 
     # 3) Roteia mensagens válidas
