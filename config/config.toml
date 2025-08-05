@@ -6,12 +6,12 @@ logger_config = "config/logs.toml"
 [uart]
 ports = [
   "/dev/ttyS0",
-  "/dev/ttyAMA2",
-  "/dev/ttyAMA3", # ESP-NOW
+  "/dev/ttyAMA2", #ESP-NOW
+  "/dev/ttyAMA3",  
   "/dev/ttyAMA4",
   "/dev/ttyAMA5"  # LoRa
 ]
-baud_rate = 9600
+baudrate = 9600
 
 # Configurações do broker MQTT
 [mqtt]
