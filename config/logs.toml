@@ -25,7 +25,7 @@ class       = "logging.handlers.RotatingFileHandler"
 level       = "DEBUG"
 formatter   = "detailed"
 filename    = "logs/bifrost.log"
-maxBytes    = 50000
+maxBytes    = 10000000
 backupCount = 3
 
 #
