@@ -64,6 +64,7 @@ def main():
 #   - Envia de acordo com protocolo e destino.
 #   - A validação dos campos PRECISA ACONTECER EM GET().
 def dispatch(message: dict, registry: DeviceRegistry, handlers: dict):
+    logger.debug("[DISPATCHER] Recebido a mensagem: %s", message)
 
     message_type   = message.get("type")
     destination_id = message.get("dst")
@@ -81,7 +82,6 @@ def dispatch(message: dict, registry: DeviceRegistry, handlers: dict):
         source_handler = message.get("protocol")
         request_for_register(source_address, handlers.get(source_handler))
         return
-
     # 3) Roteia mensagens válidas
     if destination_id == "central":
         logger.info("[CENTRAL] %s -> central: %s", source_address, message.get("payload"))

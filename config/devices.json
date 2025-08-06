@@ -1,26 +1,30 @@
 {
-  "device1": {
-    "protocol": "MQTT",
-    "topic": "/sensores/device1"
-  },
-  "esp8266-umidade": {
-    "protocol": "MQTT",
-    "topic": "/sensores/esp8266-umidade"
-  },
-  "esp8266-tempo": {
-    "protocol": "MQTT",
-    "topic": "/sensores/esp8266-tempo"
-  },
-  "esp8266": {
-    "protocol": "MQTT",
-    "topic": "/sensores/esp8266"
-  },
-  "umidade-jardim": {
-    "protocol": "LORA",
-    "address": "03"
-  },
-  "ESP_Blink": {
-    "address": "48:55:19:00:04:1E",
-    "protocol": "espnow"
-  }
+    "device1": {
+        "protocol": "MQTT",
+        "topic": "/sensores/device1"
+    },
+    "esp8266-umidade": {
+        "protocol": "MQTT",
+        "topic": "/sensores/esp8266-umidade"
+    },
+    "esp8266-tempo": {
+        "protocol": "MQTT",
+        "topic": "/sensores/esp8266-tempo"
+    },
+    "esp8266": {
+        "protocol": "MQTT",
+        "topic": "/sensores/esp8266"
+    },
+    "umidade-jardim": {
+        "protocol": "LORA",
+        "address": "03"
+    },
+    "ESP_Blink_remover": {
+        "address": "48:55:19:00:04:1E",
+        "protocol": "espnow"
+    },
+    "ESP_Blink": {
+        "address": "CC:7B:5C:4F:CD:09",
+        "protocol": "espnow"
+    }
 }
