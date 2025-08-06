@@ -3,9 +3,9 @@
         "protocol": "MQTT",
         "topic": "/sensores/device1"
     },
-    "esp8266-umidade": {
+    "Umidade-MQTT": {
         "protocol": "MQTT",
-        "topic": "/sensores/esp8266-umidade"
+        "topic": "/sensores/Umidade-MQTT"
     },
     "esp8266-tempo": {
         "protocol": "MQTT",
@@ -25,6 +25,10 @@
     },
     "ESP_Blink": {
         "address": "CC:7B:5C:4F:CD:09",
+        "protocol": "espnow"
+    },
+    "ESP_DHT11": {
+        "address": "4C:75:25:37:3F:59",
         "protocol": "espnow"
     }
 }

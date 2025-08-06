@@ -14,5 +14,5 @@ test_msg = {
     }
 }
 
-ser = serial.Serial('/dev/ttyS0', 9600)
+ser = serial.Serial('/dev/ttyAMA2', 9600)
 ser.write((json.dumps(test_msg) + '\n').encode('utf-8'))
