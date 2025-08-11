@@ -1,0 +1,32 @@
+# Comunicação MQTT
+paho-mqtt>=1.6.1
+
+# API Web e WebSockets
+flask>=2.3.2
+flask-socketio>=5.3.6
+flask-cors>=4.0.0
+
+# Servidor assíncrono para Flask-SocketIO
+eventlet>=0.33.3
+
+# Comunicação Serial
+pyserial>=3.5
+
+# Manipulação de dados e APIs
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Logs e cores no terminal
+colorama>=0.4.6
+loguru>=0.7.2
+
+# Parsing e tratamento de dados
+pandas>=2.1.1
+numpy>=1.26.0
+
+# Agendamento de tarefas
+schedule>=1.2.0
+apscheduler>=3.10.4
+
+# Utilitários extras
+psutil>=5.9.5
