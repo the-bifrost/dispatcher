@@ -33,10 +33,12 @@
     },
     "termohigrometro": {
         "address": "2C:F4:32:16:F5:17",
+        "device_type": "thermohygrometer",
         "protocol": "espnow"
     },
     "termohigrometro-MQTT": {
         "protocol": "MQTT",
+        "device_type": "thermohygrometer",
         "topic": "sensores/termohigrometro"
     },
     "ESP_RTC": {
