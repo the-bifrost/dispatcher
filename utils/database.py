@@ -4,8 +4,9 @@ import logging
 import os
 from dotenv import load_dotenv
 
-from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
+from influxdb_client.rest import ApiException
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,12 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 def write_data(point_dict: dict):
     """Usa a API do Influx para escrever no database"""
     point = Point.from_dict(point_dict)
-    write_api.write(bucket=bucket, org=org, record=point)
-    logger.debug("Escrevendo dados no InfluxDB: %s", point_dict)
+
+    try:
+        write_api.write(bucket=bucket, org=org, record=point)
+        logger.debug("Escreveu dados no InfluxDB: %s", point_dict)
+    except ApiException as e:
+        logger.error("Erro ao escrever dados no InfluxDB: %s", e.message)
 
 def envelope_to_point_dict(message: dict, measurement: str) -> dict:
     point_dict = {}
