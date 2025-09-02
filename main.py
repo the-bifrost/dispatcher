@@ -1,3 +1,5 @@
+"""Start Dispacher."""
+
 import logging
 import logging.config
 import time
@@ -8,6 +10,7 @@ from protocols import MQTTHandler, SerialHandler
 from utils.config_loader import load_config
 from utils.envelope import make_envelope, serialize
 from utils.registry import DeviceRegistry
+from utils.database import write_data, envelope_to_point_dict, close_write_api
 
 cfg = load_config("config/config.toml")
 
@@ -21,6 +24,7 @@ def setup_logging():
 # - Inicializa a comunicação com as unidades de cada protocolo e monitora recebimentos.
 # - Se a mensagem recebida for válida, despacha para unidade de destino.
 def main():
+    """Start Dispatcher."""
     setup_logging()
 
     logger.info("Iniciando Dispatcher...")
@@ -54,7 +58,9 @@ def main():
         for handler in handlers.values():
             handler.close()
 
-        logger.info("Encerrando Dispatcher...")        
+        close_write_api()
+
+        logger.info("Encerrando Dispatcher...")    
         exit(1)
 
 # dispatch()
@@ -99,8 +105,10 @@ def dispatch(message: dict, registry: DeviceRegistry, handlers: dict):
     if destination_handler:
         message["dst"] = destination_info.get("adress") or destination_info.get("topic")
         destination_handler.handleMessage(destination_info=destination_info, message=message)
-        logger.info("[DISPATCHER] '%s' → '%s' via '%s'", source_address, destination_info, destination_protocol)        
-        handlers["MQTT"].publish(f'bifrost/{destination_protocol}/{destination_id}/telemetry', serialize(message))
+        logger.info("[DISPATCHER] '%s' → '%s' via '%s'", source_address, destination_info, destination_protocol)
+        
+        write_data(envelope_to_point_dict(message=message, measurement=info.get("device_type")))
+        #handlers["MQTT"].publish(f'bifrost/{destination_protocol}/{destination_id}/telemetry', serialize(message))
 
 
     # 5) Mensagens ignoradas (descomentar para debugging)

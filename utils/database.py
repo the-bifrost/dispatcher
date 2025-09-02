@@ -1,11 +1,13 @@
 """Faz a conexão da dispatcher com o InfluxDB"""
 
+import logging
 import os
-import time
 from dotenv import load_dotenv
 
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
+
+logger = logging.getLogger(__name__)
 
 # Carrega as configurações do .env na raiz do projeto
 load_dotenv()
@@ -25,8 +27,8 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 def write_data(point_dict: dict):
     """Usa a API do Influx para escrever no database"""
     point = Point.from_dict(point_dict)
-
     write_api.write(bucket=bucket, org=org, record=point)
+    logger.debug("Escrevendo dados no InfluxDB: %s", point_dict)
 
 def envelope_to_point_dict(message: dict, measurement: str) -> dict:
     point_dict = {}
@@ -75,21 +77,3 @@ def main():
 if __name__ == "__main__":
     """Debug"""
     main()
-
-# def write_data(message: dict, measurement: str):
-#     """Usa a API do Influx para escrever no database"""
-#     point = (
-#         Point(measurement)
-#         .tags("device_id", message.get("id"))
-#         .tag("protocol", message.get("protocol"))
-#     )
-
-#     for key, value in message["payload"].items():
-#             if value is None:
-#                 continue
-                
-#             if isinstance(value, (int, float, bool, str)):
-#                 point = point.field(str(key), value)
-
-#     print(point)       
-#     #write_api.write(bucket=bucket, org=org, record=point)
