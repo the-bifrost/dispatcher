@@ -99,7 +99,9 @@ def dispatch(message: dict, registry: DeviceRegistry, handlers: dict):
     if destination_handler:
         message["dst"] = destination_info.get("adress") or destination_info.get("topic")
         destination_handler.handleMessage(destination_info=destination_info, message=message)
-        logger.info("[DISPATCHER] '%s' → '%s' via '%s'", source_address, destination_info, destination_protocol)
+        logger.info("[DISPATCHER] '%s' → '%s' via '%s'", source_address, destination_info, destination_protocol)        
+        handlers["MQTT"].publish(f'bifrost/{destination_protocol}/{destination_id}/telemetry', serialize(message))
+
 
     # 5) Mensagens ignoradas (descomentar para debugging)
     else:
