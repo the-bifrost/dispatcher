@@ -13,7 +13,6 @@ ports = [
 ]
 baudrate = 9600
 
-# Configurações do broker MQTT
 [mqtt]
 broker = "localhost"
 port = 1883
