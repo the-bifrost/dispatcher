@@ -1,21 +1,29 @@
-"""Gerencia o Envelope padrão da Bifrost."""
+"""Gerenciamento dos Envelopes da Bifrost."""
 
 import json
 import logging
 import time
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
-@dataclass(frozen=True, order=True)
-class Envelope:
+class Envelope(BaseModel):
+    """Envelope padrão para mensagens da Bifrost"""
     v: int
+    protocol: str
     src: str
     dst: str
     type: str
     ts: int
     payload: dict
+
+
+
+
+##########################################################################################
+#                          Implementação antiga da biblioteca                            #
+##########################################################################################
 
 def make_envelope(src: str, dst: str, payload, msg_type="state", version=1) -> dict:
     """Monta uma mensagem no padrão Bifrost de acordo com os dados recebidos.
@@ -80,33 +88,3 @@ def deserialize(data_string: str) -> dict | None:
     except Exception as e:
         logger.error("Erro inesperado: %s", e)
         return None
-    
-
-def debug():
-    envelope = Envelope(
-        v=1,
-        src="source",
-        dst="destination",
-        type="state",
-        ts=int(time.time()),
-        payload={"key": "value"}
-    )
-
-    envelope2 = Envelope(
-        v=2,
-        src="source",
-        dst="destination",
-        type="state",
-        ts=int(time.time()),
-        payload={"key": "value"}
-    )
-
-    print(envelope)
-    print(envelope2)
-
-    envelope_serial = serialize(asdict(envelope))
-    print(envelope_serial)
-
-
-if __name__ == "__main__":
-    debug()
