@@ -1,34 +1,20 @@
 {
-    "device1": {
-        "protocol": "MQTT",
-        "topic": "/sensores/device1"
-    },
-    "Umidade-MQTT": {
-        "protocol": "MQTT",
-        "topic": "/sensores/Umidade-MQTT"
-    },
-    "esp8266-tempo": {
-        "protocol": "MQTT",
-        "topic": "/sensores/esp8266-tempo"
-    },
-    "esp8266": {
-        "protocol": "MQTT",
-        "topic": "/sensores/esp8266"
-    },
-    "umidade-jardim": {
-        "protocol": "LORA",
-        "address": "03"
-    },
-    "ESP_Blink_remover": {
-        "address": "48:55:19:00:04:1E",
-        "protocol": "espnow"
-    },
-    "ESP_Blink": {
-        "address": "CC:7B:5C:4F:CD:09",
-        "protocol": "espnow"
-    },
     "ESP_DHT11": {
         "address": "4C:75:25:37:3F:59",
+        "protocol": "espnow"
+    },
+    "termohigrometro": {
+        "address": "2C:F4:32:16:F5:17",
+        "device_type": "thermohygrometer",
+        "protocol": "espnow"
+    },
+    "termohigrometro-MQTT": {
+        "protocol": "MQTT",
+        "device_type": "thermohygrometer",
+        "topic": "sensores/termohigrometro"
+    },
+    "ESP_RTC": {
+        "address": "48:55:19:00:04:1E",
         "protocol": "espnow"
     }
 }

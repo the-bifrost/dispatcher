@@ -11,6 +11,7 @@ Para garantir a compatibilidade entre protocolos, as mensagens são enviadas den
   "v": 1,
   "src": "source/fonte/sensor",
   "dst": "destino",
+  "protocol": "device_protocol",
   "type": "tipo-da-mensagem",
   "ts": 1686026400,
   "payload": {}

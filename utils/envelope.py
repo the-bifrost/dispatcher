@@ -1,20 +1,29 @@
-""" Envelopamento e Desenvelopamento de Mensagens.
-
-Esse módulo é uma coletânea de funções para envelopar/desenvelopar/encriptar dados
-que são lidos pela Bifrost.
-
-Exemplos de uso:
-
-    received_message = deserialize(received_data)
-    message = make_envelope(source_id, "central", {"response":"ok"})
-    message_serialized = serialize(message)
-"""
+"""Gerenciamento dos Envelopes da Bifrost."""
 
 import json
 import logging
 import time
 
+from pydantic import BaseModel, ValidationError
+
 logger = logging.getLogger(__name__)
+
+class Envelope(BaseModel):
+    """Envelope padrão para mensagens da Bifrost"""
+    v: int
+    protocol: str
+    src: str
+    dst: str
+    type: str
+    ts: int
+    payload: dict
+
+
+
+
+##########################################################################################
+#                          Implementação antiga da biblioteca                            #
+##########################################################################################
 
 def make_envelope(src: str, dst: str, payload, msg_type="state", version=1) -> dict:
     """Monta uma mensagem no padrão Bifrost de acordo com os dados recebidos.
