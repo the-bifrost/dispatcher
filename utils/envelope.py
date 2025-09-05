@@ -3,10 +3,12 @@
 import json
 import logging
 import time
+from typing import Any, Dict
 
 from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
+
 
 class Envelope(BaseModel):
     """Envelope padrão para mensagens da Bifrost"""
@@ -16,9 +18,16 @@ class Envelope(BaseModel):
     dst: str
     type: str
     ts: int
-    payload: dict
+    payload: Dict[str, Any] = {}
 
 
+def parse_envelope(message: str) -> Envelope | None:
+    """Tenta converter strings em Envelope."""
+    try:
+        return Envelope.model_validate_json(message)
+    except ValidationError as e:
+        logger.info("Mensagem com formato inválido: %s", e)
+        return None
 
 
 ##########################################################################################
@@ -26,15 +35,7 @@ class Envelope(BaseModel):
 ##########################################################################################
 
 def make_envelope(src: str, dst: str, payload, msg_type="state", version=1) -> dict:
-    """Monta uma mensagem no padrão Bifrost de acordo com os dados recebidos.
-
-    Args:
-        src: Remetente da mensagem.
-        dst: Destinatário da mensagem.
-        payload: Pode ser qualquer tipo de dado, preferencialmente um dicionário.
-        msg_type: O assunto da mensagem.
-        version: versionamento da mensagem, para evitar quebrar o código no futuro.
-    """
+    """Monta uma mensagem no padrão Bifrost de acordo com os dados recebidos."""
     return {
         "v": version,
         "src": src,
@@ -45,41 +46,15 @@ def make_envelope(src: str, dst: str, payload, msg_type="state", version=1) -> d
     }
 
 def serialize(data: dict) -> str:
-    """Converte um dicionário em uma string JSON
-
-    Args:
-        data: Um dicionário que será convertido em JSON.
-
-    Returns:
-        Uma string JSON em caso de sucesso:
-
-        {"protocol": "MQTT", "topic": "/example/state"}
-         
-        Caso ocorrer algum erro durante a conversão, retorna um JSON vazio:
-
-        {}
-    """
+    """Converte um dicionário em uma string JSON"""
     try:
         return json.dumps(data)
     except (TypeError, ValueError) as e:
         logger.error("Erro ao serializar o dicionário: %s", e)
 
-def deserialize(data_string: str) -> dict | None:
-    """Converte uma string JSON em um dicionário de informações.
-    
-    Args:
-        data_string: Uma string JSON com dados de um dispositivo.
-    
-    Returns:
-        Um dicionário em caso de sucesso:
 
-        {
-            "protocol": "MQTT", 
-            "topic": "/example/state"
-        }
-         
-        Caso ocorrer algum erro durante a conversão, retorna um None.
-    """
+def deserialize(data_string: str) -> dict | None:
+    """Converte uma string JSON em um dicionário de informações."""
     try:
         return json.loads(data_string)
     except json.JSONDecodeError as e:
