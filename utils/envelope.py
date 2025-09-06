@@ -3,7 +3,7 @@
 import json
 import logging
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 
 from pydantic import BaseModel, ValidationError
 
@@ -17,7 +17,7 @@ class Envelope(BaseModel):
     src: str
     dst: str
     type: str
-    ts: int
+    ts: int = int(time.time())
     payload: Dict[str, Any] = {}
 
 
@@ -28,6 +28,7 @@ def parse_envelope(message: str) -> Envelope | None:
     except ValidationError as e:
         logger.info("Mensagem com formato inválido: %s", e)
         return None
+
 
 
 ##########################################################################################

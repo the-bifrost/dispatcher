@@ -2,94 +2,133 @@
 
 import logging
 from utils.envelope import Envelope
+from utils.registry import DeviceRegistry
+
+from utils.database import write_data, envelope_to_point_dict, close_write_api
 
 logger = logging.getLogger(__name__)
 
-def dispatch(message: dict, registry, handlers: dict):
-    """Despacha mensagens válidas para seus destinatários"""
-    logger.debug("Recebido a mensagem: %s", message)
+class Dispatcher:
+    """Gerencia o roteamento de mensagens entre dispositivos."""
 
-    if response_message := validate_message(message, handlers) is not None:
-        handlers
-
-
-    pass
+    def __init__(self, registry: DeviceRegistry, handlers: dict):
+        self._registry = registry
+        self._handlers = handlers
 
 
+    def dispatch(self, message: Envelope):
+        """Recebe um envelope válido e dispara conforme necessário."""
+
+        # 1. Requisições de Registro
+        if self._is_register_request(message):
+            self._handle_registration(message)
+            return
+        
+        # 2. Verifica se o remetente é conhecido
+        source_info = self.registry.get_by_address(message.src)
+
+        if not source_info:
+            self._request_registration(message)
+            return
+        
+        # 3. Roteia a mensagem para a central
+        if message.get == "central":
+            logger.info(f"[CENTRAL] {message.src} -> central: {message.payload}")
+        else:
+            self._route_to_device(message, source_info)
 
 
+    ##########################################################################################
+    #                                Funções de Registro                                     #
+    ##########################################################################################
 
-def validate_message(message: dict, registry):
-    """Recebe e valida mensagens, retorna a resposta"""
-
-    if is_register_request():
-        register_new_device(message=message, registry=registry, handlers=handlers)
-        return
-
-    if not is_known_device(message, registry):
-        source_handler = message.get("protocol")
-        request_for_register(message.get("address"), handlers.get(source_handler))
-        return
-
-    return None
-    
-
-def is_register_request(message) -> bool:
-    return message.get("dst") == "central" and message.get("type") == "register"
-
-def is_known_device(message, registry) -> bool:
-    return registry.get_by_address(message.get("src")) is not None
-
-    
-    # 3) Roteia mensagens válidas
-    if destination_id == "central":
-        logger.info("[CENTRAL] %s -> central: %s", source_address, message.get("payload"))
-    
-    # 4) Roteia Mensagens para outros dispositivos
-    destination_info = registry.get_by_id(destination_id)
-
-    if not destination_info:
-        logger.debug("[DISPATCHER] Destino '%s' não cadastrado", destination_id)
-        return
-
-    destination_protocol = destination_info["protocol"]
-    destination_handler  = handlers.get(destination_protocol)
-
-    if destination_handler:
-        message["dst"] = destination_info.get("adress") or destination_info.get("topic")
-        destination_handler.handleMessage(destination_info=destination_info, message=message)
-        logger.info("[DISPATCHER] '%s' → '%s' via '%s'", source_address, destination_info, destination_protocol)
+    def _is_register_request(self, message: Envelope):
+        """Valida requisições de cadastramento."""
+        return message.dst == "central" and message.type == "register"
 
 
-# register_new_device()
-#   - Recebe o dict da mensagem, o endereço do destinatário.
-#   - Registra os dados no Registry
-#   - Usa a comunicação de origem para enviar a resposta.
-def register_new_device(message: dict, registry, handlers):
-    device_id       = message["payload"].get("id")
-    source_address  = message.get("src")
-    device_protocol = message.get("protocol")
+    def _handle_registration(self, message: Envelope):
+        """Registra um novo dispositivo e envia uma resposta de confirmação"""
+        device_id = message.payload.get("id")
+        device_type = message.payload.get("device_type")
 
-    response = registry.add(device_id=device_id, address=source_address, protocol=device_protocol)
-    handlers[device_protocol].send(serialize(response))
+        if not device_id:
+            logger.warning("Tentativa de registro sem 'id' no payload")
+            return
+        
+        response = Envelope(
+            v = 1,
+            protocol = message.protocol,
+            src = "central",
+            dst = message.src,
+            type = "register_response",
+            payload = self.registry.add(
+                device_id=device_id,
+                device_type=device_type,
+                address=message.src,
+                protocol=message.protocol
+            )
+        )
+
+        handler = self._handlers.get(message.protocol)
+
+        if handler:
+            handler.send(response)
+            logger.debug(f"{message.src} cadastrado com sucesso.")
+        else:
+            logger.error("Handler para o protocolo '%s' não encontrado para enviar resposta de registro.", message.protocol)
+            return
 
 
-# request_for_register()
-#   - Monta o JSON para requisitar os dados do dispositivo.
-#   - Envia a requisição.
-def request_for_register(source_address: str, handler) -> bool:
+    def _request_registration(self, message: Envelope):
+        """Solicita que um dispositivo conhecido se registre."""
 
-    if not handler:
-        logger.error("request_for_register() -> HANDLER tem valor nulo")
-        return False
+        handler = self._handlers.get(message.protocol)
 
-    request = make_envelope(
-        src = "central",
-        dst = source_address,
-        msg_type="register_request",
-        payload={"status":"not_registered"}
-    )
+        if not handler:
+            logger.error(f"Handler para protocolo '{message.protocol}' não encontrado para solicitar registro.")
+            return
+        
+        request = Envelope(
+            v=1,
+            protocol=message.protocol,
+            src="central",
+            dst=message.src,
+            type="register_request",
+            payload={"status":"not_registered"}
+        )
 
-    handler.send(serialize(request))
-    logger.debug("[DISPATCHER] %s não cadastrado, solicitação de registro enviada.", source_address)
-    return True
+        handler.send(request)
+        logger.debug(f"{message.src} não cadastrado, solicitação de registro enviada.")
+
+
+    def _route_to_device(self, message: Envelope, source_info: dict):
+        """Roteia uma mensagem de um dispositivo conhecido para outro."""
+
+        destination_info = self.registry.get_by_id(message.dst)
+
+        if not destination_info:
+            logger.debug(f"[DISPATCHER] Destino '{message.dst}' não cadastrado.")
+            return
+        
+        dest_protocol = destination_info.get("protocol")
+        dest_handler = self.handlers.get(dest_protocol)
+
+        if not dest_handler:
+            logger.debug(f"[DISPATCHER] Protocolo '{dest_protocol}' não implementado.")
+            return
+        
+        envelope = Envelope(
+            v = 1,
+            protocol = dest_protocol,
+            src = message.src,
+            dst = destination_info.get("address"),
+            payload=message.payload
+        )
+        dest_handler.send(envelope)
+        
+        logger.info(f"[DISPATCHER] '{message.src}' → '{destination_info}' via '{dest_protocol}'")
+
+        # Escreve os dados no banco de dados
+        point = envelope_to_point_dict(message=envelope, measurement=source_info.get("device_type"))
+        write_data(point)

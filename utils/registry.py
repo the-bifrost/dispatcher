@@ -1,22 +1,18 @@
-"""Mantém registro de dispositivos em um arquivo JSON
-
-Recebe um caminho até um arquivo json (caso não exista, será criado), onde será armazenado
-o registro de dispositivos. Todos os dispositivos são armazenados em self._registry, e esse
-dicionário local é sincronizado com o arquivo JSON sempre que um novo dispositivo é adicionado.
-
-Exemplo de uso:
-
-    registry = DeviceRegistry("/example/example_registry.json")
-    device_info = registry.get_by_id("esp8266")
-"""
+"""Mantém registro de dispositivos em um arquivo JSON"""
 
 import json
 import logging
 from pathlib import Path
 
+from pydantic import BaseModel, ValidationError
+
 from utils.envelope import make_envelope
 
 logger = logging.getLogger(__name__)
+
+##########################################################################################
+#                          Implementação antiga da biblioteca                            #
+##########################################################################################
 
 class DeviceRegistry():
     def __init__(self, path: str):

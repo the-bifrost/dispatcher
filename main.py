@@ -2,66 +2,59 @@
 
 import logging
 import logging.config
-import time
 
 from pathlib import Path
 
+from dispatcher import Dispatcher
 from protocols import MQTTHandler, SerialHandler
 from utils.config_loader import load_config
-from utils.envelope import make_envelope, serialize
+from utils.envelope import parse_envelope
 from utils.registry import DeviceRegistry
-from utils.database import write_data, envelope_to_point_dict, close_write_api
 
 cfg = load_config("config/config.toml")
 
 logger = logging.getLogger()
 
+
 def setup_logging():
     logger_config = load_config(cfg.paths.logger_config)
     logging.config.dictConfig(logger_config)
 
-# main()
-# - Inicializa a comunicação com as unidades de cada protocolo e monitora recebimentos.
-# - Se a mensagem recebida for válida, despacha para unidade de destino.
 def main():
     """Start Dispatcher."""
     setup_logging()
 
     logger.info("Iniciando Dispatcher...")
 
-    # Carrega o Registro de Dispositivos, com o protoclo e endereço/tópico de cada um.
     registry = DeviceRegistry(Path(__file__).parent / cfg.paths.device_registry)
     
-    # Instanciando o objeto de cada comunicação.
-    #
-    # - Comunicações do próprio Rasp devem ter sua própria Classe, como o MQTT.
-    # - Comunicações via serial devem ser declaradas usando a Classe SerialHandler.
     handlers = {
         "MQTT": MQTTHandler(cfg.mqtt.broker, cfg.mqtt.port),
         "espnow": SerialHandler(cfg.uart.ports[1], cfg.uart.baudrate),
     }
 
+    dispatcher = Dispatcher(registry=DeviceRegistry, handlers=handlers)
+
     logger.info("Dispatcher Iniciado!")
 
-    # Faz a leitura contínua de todos os protocolos configurados.
-    #  - Sempre que receber uma mensagem, envia para o dispatcher.
     try:
         while True:
             for handler in handlers.values():
-                message = handler.read()
-                if (message):
-                    dispatch(message, registry, handlers)
-            time.sleep(0.1)
+                message_dict = handler.read()
+
+                if message_dict:
+                    envelope = parse_envelope(message=message_dict)
+
+                    if envelope: 
+                        dispatcher.dispatch(registry=DeviceRegistry, handlers=handlers)
     
-    # Encerra o programa
     except KeyboardInterrupt:
         for handler in handlers.values():
             handler.close()
 
-        close_write_api()
-
         logger.info("Encerrando Dispatcher...")    
         exit(1)
+
 
 # dispatch()
 #   - Salva o endereço do remetente, o ID do destinatário e o tipo de mensagem.
@@ -149,4 +142,5 @@ def request_for_register(source_address: str, handler) -> bool:
     return True
 
 if __name__ == "__main__":
+    """Start Dispatcher."""
     main()
