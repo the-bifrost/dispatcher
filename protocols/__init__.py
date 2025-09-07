@@ -1,5 +1,5 @@
 from .base_handler   import BaseHandler
-from .serial_handler import SerialHandler
-from .mqtt_handler   import MQTTHandler
+from .espnow_handler import EspNowHandler
+from .mqtt_handler   import MqttHandler
 
-__all__ = ["BaseHandler", "SerialHandler", "MQTTHandler"]
+__all__ = ["BaseHandler", "EspNowHandler", "MqttHandler"]

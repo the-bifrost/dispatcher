@@ -25,7 +25,7 @@ from utils.envelope import serialize, deserialize
 
 logger = logging.getLogger(__name__)
 
-class MQTTHandler:
+class MqttHandler:
     def __init__(self, broker: str, port: int = 1883):
         """Classe para abstrair a Conexao/Envio/Recebimento com o broker mqtt
 

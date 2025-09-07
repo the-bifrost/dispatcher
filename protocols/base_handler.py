@@ -14,8 +14,8 @@ class BaseHandler(ABC):
         pass
     
     @abstractmethod
-    def write(self, envelope: Envelope, device: Envelope):
-        """Recebe um envelope e envia a mensagem, internamente """
+    def write(self, envelope: Envelope, device: Device):
+        """Recebe um envelope e envia a mensagem, internamente."""
         pass
 
     @abstractmethod
