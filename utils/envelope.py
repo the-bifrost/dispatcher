@@ -35,32 +35,32 @@ def parse_envelope(message: str) -> Envelope | None:
 #                          Implementação antiga da biblioteca                            #
 ##########################################################################################
 
-def make_envelope(src: str, dst: str, payload, msg_type="state", version=1) -> dict:
-    """Monta uma mensagem no padrão Bifrost de acordo com os dados recebidos."""
-    return {
-        "v": version,
-        "src": src,
-        "dst": dst,
-        "type": msg_type,
-        "ts": int(time.time()),
-        "payload": payload
-    }
+# def make_envelope(src: str, dst: str, payload, msg_type="state", version=1) -> dict:
+#     """Monta uma mensagem no padrão Bifrost de acordo com os dados recebidos."""
+#     return {
+#         "v": version,
+#         "src": src,
+#         "dst": dst,
+#         "type": msg_type,
+#         "ts": int(time.time()),
+#         "payload": payload
+#     }
 
-def serialize(data: dict) -> str:
-    """Converte um dicionário em uma string JSON"""
-    try:
-        return json.dumps(data)
-    except (TypeError, ValueError) as e:
-        logger.error("Erro ao serializar o dicionário: %s", e)
+# def serialize(data: dict) -> str:
+#     """Converte um dicionário em uma string JSON"""
+#     try:
+#         return json.dumps(data)
+#     except (TypeError, ValueError) as e:
+#         logger.error("Erro ao serializar o dicionário: %s", e)
 
 
-def deserialize(data_string: str) -> dict | None:
-    """Converte uma string JSON em um dicionário de informações."""
-    try:
-        return json.loads(data_string)
-    except json.JSONDecodeError as e:
-        logger.error("Erro ao converter string em dicionário: %s", e)
-        return None
-    except Exception as e:
-        logger.error("Erro inesperado: %s", e)
-        return None
+# def deserialize(data_string: str) -> dict | None:
+#     """Converte uma string JSON em um dicionário de informações."""
+#     try:
+#         return json.loads(data_string)
+#     except json.JSONDecodeError as e:
+#         logger.error("Erro ao converter string em dicionário: %s", e)
+#         return None
+#     except Exception as e:
+#         logger.error("Erro inesperado: %s", e)
+#         return None

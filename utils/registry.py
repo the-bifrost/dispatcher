@@ -6,8 +6,6 @@ from pathlib import Path
 
 from pydantic import BaseModel, ValidationError
 
-from utils.envelope import make_envelope
-
 logger = logging.getLogger(__name__)
 
 ##########################################################################################
