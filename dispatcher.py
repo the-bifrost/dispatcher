@@ -25,7 +25,7 @@ class Dispatcher:
             return
         
         # 2. Verifica se o remetente é conhecido
-        source_info = self.registry.get_by_address(message.src)
+        source_info = self._registry.get_by_address(message.src)
 
         if not source_info:
             self._request_registration(message)
@@ -62,7 +62,7 @@ class Dispatcher:
             src = "central",
             dst = message.src,
             type = "register_response",
-            payload = self.registry.add(
+            payload = self._registry.add(
                 device_id=device_id,
                 device_type=device_type,
                 address=message.src,
@@ -105,14 +105,14 @@ class Dispatcher:
     def _route_to_device(self, message: Envelope, source_info: dict):
         """Roteia uma mensagem de um dispositivo conhecido para outro."""
 
-        destination_info = self.registry.get_by_id(message.dst)
+        destination_info = self._registry.get_by_id(message.dst)
 
         if not destination_info:
             logger.debug(f"[DISPATCHER] Destino '{message.dst}' não cadastrado.")
             return
         
         dest_protocol = destination_info.get("protocol")
-        dest_handler = self.handlers.get(dest_protocol)
+        dest_handler = self._handlers.get(dest_protocol)
 
         if not dest_handler:
             logger.debug(f"[DISPATCHER] Protocolo '{dest_protocol}' não implementado.")
