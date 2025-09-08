@@ -3,120 +3,113 @@
 import json
 import logging
 from pathlib import Path
+from typing import Dict, List, Any
 
-from pydantic import BaseModel, ValidationError
+from pydantic import TypeAdapter
+
+from models.devices import Device, EspNowDevice, MqttDevice
 
 logger = logging.getLogger(__name__)
 
-##########################################################################################
-#                          Implementação antiga da biblioteca                            #
-##########################################################################################
-
 class DeviceRegistry():
     def __init__(self, path: str):
-        """Carrega e salva localmente o JSON de configuração (caso não existir, inicia um json vazio). 
-
-        Args:
-            path: O caminho até o arquivo json usado para registrar.
-        """
-
+        """Inicializa dados e cria um validador de registro."""
         self.path = Path(path)
-        self._registry: dict = {}
+        self.devices: Dict[str, Device] = {}
+        self._validator = TypeAdapter(Dict[str, Device])
 
-        if self.path.exists():
-            try:
-                with self.path.open('r', encoding='utf-8') as f:
-                    self._registry = json.load(f)
-            except json.JSONDecodeError as e:
-                logger.error("Falha ao carregar JSON do arquivo '%s': %s", self.path, e)
-                raise ValueError("Arquivo JSON inválido.") from e
+        self.devices = self._load()
 
-        else:
+    def _load(self) -> Dict[str, Device]:
+        """Carrega e valida o registro a partir do arquivo JSON."""
+        
+        if not self.path.exists():
             logger.info("Arquivo '%s' não encontrado. Criando novo registro vazio.", self.path)
-            self._registry = {}
             self.save()
+            return {}
+        
+        try:
+            raw_content = self.path.read_text('utf-8')
+            validated_devices = self._validator.validate_json(raw_content)
 
+            logger.info("Registro de dispositivos carregado e validado com sucesso!")
+            return validated_devices
+        except (json.JSONDecodeError, Exception) as e:
+            logger.error("Falha ao carregar ou validar o registro '%s': %s", self.path, e)
+            raise ValueError("Arquivo JSON inválido ou com dados inconsistentes.") from e
+        
     def save(self) -> None:
-        """Salva o registro local em um arquivo JSON"""
+        """Salva o registro local em um arquivo JSON."""
+        # <<< MUDANÇA: Precisamos converter os objetos Pydantic de volta para dicionários
+        registry_to_save = {
+            device_id: device.model_dump(mode='json')
+            for device_id, device in self.devices.items()
+        }
 
         try:
             with self.path.open('w', encoding='utf-8') as f:
-                json.dump(self._registry, f, indent=4, ensure_ascii=False)
+                # Usamos a nova variável que contém apenas dicionários
+                json.dump(registry_to_save, f, indent=4, ensure_ascii=False)
             logger.debug("Registro salvo com sucesso em '%s'", self.path)
         except Exception as e:
             logger.error("Falha ao salvar JSON no arquivo '%s' : '%s'", self.path, e)
             raise
 
-    def get_by_id(self, device_id: str) -> dict | None:
-        """Retorna dicionário com informações de dispositivos cadastrados
-        
-        Retorna o resultado da consulta do id na lista de cadastrados. Dispositivos
-        não cadastrados retornam Nulo.
-
-        Args:
-            device_id: O id do dispositivo que está sendo buscado.
-
-        Returns:
-            Se o dispositivo for encontrado no registro, deve retornar um dicionário com
-            suas informações:
-
-            {"protocol": "MQTT", "topic": "/example/state"}
-            
-            Se o dispositivo não for encontrado, o retorno será None.
-        """
-
-        return self._registry.get(device_id)
+    # <<< MUDANÇA: O tipo de retorno agora é um objeto Device!
+    def get_by_id(self, device_id: str) -> Device | None:
+        """Retorna o objeto Device de um dispositivo cadastrado pelo seu ID."""
+        return self.devices.get(device_id)
     
-    def get_by_address(self, address: str) -> dict | None:
-        """Retorna as informações de dispositivos cadastrados a partir do adress
+    # <<< MUDANÇA: Retorna um objeto Device e a lógica é mais segura com isinstance
+    def search(self, **kwargs: Any) -> List[Device]:
+        """Busca Dispositivos no registro que correspondem a um ou mais critérios."""
+        found_devices: List[Device] = []
+
+        # Se nenhum critério for dado, retorna uma lista vazia
+        if not kwargs:
+            return found_devices
         
-        Recebe um adress/topic e busca na lista de cadastrados, se existir,
-        retorna um dicionário com as informações do dispositivo.
+        for device_id, device in self.devices.items():
+            is_match =  True
 
-        Se não existir, retorna None
+            for key, value in kwargs.items():
 
-        """
-        for id, info in self._registry.items():
-            if info.get("address") == address or info.get("topic") == address:
-                return info
-        return None
+                # Verificação especial para o ID do dispositivos, que é a chave do dicionário
+                if key == 'device_id' and device_id != value:
+                    is_match = False
+                    break
 
-    def add(self, device_id: str, address: str, protocol: str, **kwargs) -> dict:
-        """ Adiciona um dispositivo no registro de dispositivos.
+                # Usa hetattr para verificar de forma segura se o atibuto existe no objeto 
+                # e então se correspondem.
+                elif hasattr(device, key) and getattr(device, key) == value:
+                    continue
+                else:
+                    is_match = False
+                    break
 
-        Recebe os dados para cadastrar um novo dispositivo. Verifica no registro se 
-        o device_id está disponível, tenta cadastrar.
+            if is_match:
+                found_devices.append(device)
+        
+        return found_devices
+        
 
-        Deve sempre retornar um dicionário com os status do request.
-
-        Args:
-            device_id: id desejado para cadastrar o dispositivo
-            address/topic: endereço usado pra chegar ao dispositivo.
-            protocol: (MQTT, ESPNOW, LORA)
-
-        """
-
-        if device_id in self._registry:
+    # <<< MUDANÇA: A assinatura agora pode aceitar um objeto Device, tornando-a mais flexível
+    def add(self, device_id: str, device_data: Device) -> dict:
+        """Adiciona um dispositivo no registro a partir de um objeto Device."""
+        if device_id in self.devices:
             logger.info("Device '%s' já existe no registro, não irá registrar.", device_id)
-            
-            response = {
-                "status": "already_registered",
-                "device_id": device_id
-            }
-
+            response_payload = { "status": "already_registered", "device_id": device_id }
         else:
-            self._registry[device_id] = {
-                "address": address,
-                "protocol": protocol,
-                **kwargs
-            }
-
+            self.devices[device_id] = device_data
             self.save()
             logger.info("Device '%s' foi registrado!", device_id)
+            response_payload = { "status": "success", "device_id": device_id }
+        
+        # O endereço de destino para a resposta depende do tipo de dispositivo
+        destination_address = ""
+        if isinstance(device_data, EspNowDevice):
+            destination_address = device_data.address
+        elif isinstance(device_data, MqttDevice):
+            destination_address = device_data.topic
 
-            response = {
-                "status": "success",
-                "device_id": device_id
-            }
-
-        return make_envelope(src = "central", dst = address, msg_type = "register_response", payload = response);
+        return response_payload
