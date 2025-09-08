@@ -1,9 +1,10 @@
 """Confere e despacha as mensagens."""
 
 import logging
+
+from models.devices import Device, EspNowDevice, MqttDevice
 from utils.envelope import Envelope
 from utils.registry import DeviceRegistry
-
 from utils.database import write_data, envelope_to_point_dict, close_write_api
 
 logger = logging.getLogger(__name__)
@@ -25,17 +26,20 @@ class Dispatcher:
             return
         
         # 2. Verifica se o remetente é conhecido
-        source_info = self._registry.get_by_address(message.src)
+        source_devices = self._registry.search(address=message.src)
 
-        if not source_info:
+        if not source_devices:
             self._request_registration(message)
             return
         
+        # Pega o primeiro dispositivo da lista
+        source_device = source_devices[0]
+        
         # 3. Roteia a mensagem para a central
-        if message.get == "central":
+        if message.src == "central":
             logger.info(f"[CENTRAL] {message.src} -> central: {message.payload}")
         else:
-            self._route_to_device(message, source_info)
+            self._route_to_device(message, source_device)
 
 
     ##########################################################################################
@@ -52,9 +56,33 @@ class Dispatcher:
         device_id = message.payload.get("id")
         device_type = message.payload.get("device_type")
 
-        if not device_id:
+        if not device_id or not device_type:
             logger.warning("Tentativa de registro sem 'id' no payload")
             return
+        
+        device_object: Device | None = None
+
+        if message.protocol == "espnow":
+            device_object = EspNowDevice(
+                protocol="espnow",
+                device_type=device_type,
+                address=message.src
+            )
+        elif message.protocol == "mqtt":
+            device_object = MqttDevice(
+                protocol="mqtt",
+                device_type=device_type,
+                topic=message.src
+            )
+
+        if not device_object:
+            logger.error(f"Protocolo de registro desconhecido: {message.protocol}")
+            return
+        
+        response_payload = self._registry.add(
+            device_id=device_id,
+            device_data=device_object
+        )
         
         response = Envelope(
             v = 1,
@@ -62,12 +90,7 @@ class Dispatcher:
             src = "central",
             dst = message.src,
             type = "register_response",
-            payload = self._registry.add(
-                device_id=device_id,
-                device_type=device_type,
-                address=message.src,
-                protocol=message.protocol
-            )
+            payload = response_payload
         )
 
         handler = self._handlers.get(message.protocol)
@@ -102,7 +125,7 @@ class Dispatcher:
         logger.debug(f"{message.src} não cadastrado, solicitação de registro enviada.")
 
 
-    def _route_to_device(self, message: Envelope, source_info: dict):
+    def _route_to_device(self, message: Envelope, source_info: Device):
         """Roteia uma mensagem de um dispositivo conhecido para outro."""
 
         destination_info = self._registry.get_by_id(message.dst)

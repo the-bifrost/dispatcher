@@ -8,7 +8,6 @@ from pathlib import Path
 from dispatcher import Dispatcher
 from protocols import MqttHandler, EspNowHandler
 from utils.config_loader import load_config
-from utils.envelope import parse_envelope
 from utils.registry import DeviceRegistry
 
 cfg = load_config("config/config.toml")
@@ -19,6 +18,7 @@ logger = logging.getLogger()
 def setup_logging():
     logger_config = load_config(cfg.paths.logger_config)
     logging.config.dictConfig(logger_config)
+
 
 def main():
     """Start Dispatcher."""
@@ -40,13 +40,10 @@ def main():
     try:
         while True:
             for handler in handlers.values():
-                message_dict = handler.read()
+                message = handler.read()
 
-                if message_dict:
-                    envelope = parse_envelope(message=message_dict)
-
-                    if envelope: 
-                        dispatcher.dispatch(envelope)
+                if message:
+                   dispatcher.dispatch(message)
     
     except KeyboardInterrupt:
         for handler in handlers.values():
@@ -54,6 +51,7 @@ def main():
 
         logger.info("Encerrando Dispatcher...")    
         exit(1)
+
 
 if __name__ == "__main__":
     """Start Dispatcher."""
