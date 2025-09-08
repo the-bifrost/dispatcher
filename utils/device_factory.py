@@ -1,7 +1,7 @@
 """Factory para modelo de Dispositivos"""
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 from pydantic import TypeAdapter, ValidationError
 
