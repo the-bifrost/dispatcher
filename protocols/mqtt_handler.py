@@ -1,216 +1,147 @@
-"""Handler para abstrair a Conexao/Envio/Recebimento com o broker mqtt
-
-A classe faz a conexão  e reconexão com o broker automaticamente, evitando
-problemas com queda da rede.
-
-As funções principais devem seguir o padrão dos handlers da bifrost, os erros são logados
-com a lib logging.
-
-Exemplo de uso:
-
-    mqtt = MQTTHadnler("localhost", 1883)
-    mqtt.publish("/example/state", "on")
-    mqtt.subscribe("/example/state", callback_function)
-
-"""
-
-# TODO - Armazenar tópicos em um json.
+"""Handler para enviar e receber dados MQTT."""
 
 import time
 import logging
+import json
+from queue import Queue, Empty
+from typing import List
 
 import paho.mqtt.client as mqtt
+from paho.mqtt.client import MQTTMessage
 
-from utils.envelope import serialize, deserialize
+from protocols import BaseHandler
+from models.devices import Device, MqttDevice
+from utils.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 
-class MqttHandler:
+class MqttConnectionError(Exception):
+    """Exceção para falhas de conexão com o Broker MQTT."""
+    pass
+
+
+class MqttHandler(BaseHandler):
+    """Handler para comunicação MQTT usando uma fila interna (inbox)."""
+    
     def __init__(self, broker: str, port: int = 1883):
-        """Classe para abstrair a Conexao/Envio/Recebimento com o broker mqtt
+        self._broker = broker
+        self._port = port
 
-        Cria uma instância da lib PahoMQTT. Mantemos o padrão de recebimento e envio de dados dos
-        handlers do dispatcher.
+        # Usamos a lib queue para criar um inbox de mensagens.
+        self._inbox: Queue[Envelope] = Queue()
+        self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+        self._is_connected = False
+        self._topics: set[str] = set()
 
-        A lista de todas os tópicos inscritos é salva em uma variável local, sendo restaurados
-        ao reconectar. A classe faz a reconexão automática com o broker em caso de falhas. 
+        # Declarando as funções assíncronas da paho mqtt
+        self._client.on_connect = self._on_connect
+        self._client.on_message = self._on_message
+        self._client.on_disconnect = self._on_disconnect
 
-        Args:
-            broker: Endereço do broker MQTT.
-            port: Porta do broker, por padrão usa a 1883
-        """
-        self.port   = port
-        self.broker = broker
-        self.client = mqtt.Client()
+        def start(self):
+            """Inicia a conexão com o broker e se inscreve nos tópicos fornecidos."""
+            logger.info("Conectando a %s:%s...", self._broker, self._port)
+
+            try:
+                self._client.connect(self._broker, self._port, 60)
+                self._client.loop_start()
+            except Exception as e:
+                raise MqttConnectionError(f"Falha na conexão inicial com {self._broker}:{self._port}: {e}") from e
         
-        self._subscriptions = {}
-        self._connected = False
-        self._should_reconnect = True
+        def subscribe(self, topic: str):
+            """Se inscreve em um novo tópico dinamicamente."""
+            if topic not in self._topics:
+                self._topics.add(topic)
+                
+                if self._is_connected:
+                    self._client.subscribe(topic)
+                    logger.info("Inscrito dinamicamente no tópico: '%s'", topic)
 
-        self.client.on_connect = self._on_connect
-        self.client.on_message = self._on_message
-        self.client.on_disconnect = self._on_disconnect
+        # NOVO MÉTODO
+        def unsubscribe(self, topic: str):
+            """Cancela a inscrição em um tópico dinamicamente."""
+            if topic in self._topics:
+                self._topics.remove(topic)
+                if self._is_connected:
+                    self._client.unsubscribe(topic)
+                    logger.info("Inscrição cancelada para o tópico: '%s'", topic)
 
-        logger.info("Conectando a %s:%s...", self.broker, self.port)
-        self._connect()
+        # --- Implementação da Interface BaseHandler ---
 
-    def _connect(self):
-        """Configura e tenta conexão com o broker mqtt.
+        def read(self) -> Envelope | None:
+            """Pega a próxima mensagem da fila (inbox) de forma não bloqueante."""
 
-        Inicia o loop não travante do mqtt, a primeira tentativa de conexão precisa 
-        ser bem sucedida, do contrário encerra o código.
+            try:
+                return self._inbox.get_nowait()
+            except Empty:
+                return None
+        
+        def write(self, envelope: Envelope, device: Device) -> bool:
+            """Publica um envelope para o tópico associado ao dispositivo."""
 
-        Não deve ser chamado pelo usuário.
-        """
-        try:
-            self.client.reconnect_delay_set(min_delay=1, max_delay=60)
-            self.client.connect_async(self.broker, self.port)
-            self.client.loop_start()
+            if not isinstance(device, MqttDevice):
+                logger.error("Tentativa de escrita para um dispositivo não-MQTT. Dispositivo: %s", device.device_type)
+                return False
+            
+            if not self._is_connected:
+                logger.warning("Não foi possível publicar, cliente MQTT não conectado.")
+                return False
+            
+            try:
+                topic = device.topic
+                json_payload = envelope.model_dump_json()
 
-            for _ in range(10):
-                if self._connected:
+                info = self._client.publish(topic, json_payload, qos=1)
+
+                if info.rc == mqtt.MQTT_ERR_SUCCESS:
+                    logger.debug("Envelope publicado com sucesso no tópico '%s'", topic)
                     return True
-                time.sleep(0.5)
-            raise Exception("Timeout na Conexão")
+                else:
+                    logger.warning("Falha ao publicar no tópico '%s'. Código: %s", topic, info.rc)
+                    return False
+            except Exception as e:
+                logger.error("Erro inesperado durante a publicação MQTT: %s", e)
+                return False
+            
+    def close(self):
+        """Encerra a thread de rede e desconecta do broker."""
+        logger.info("Fechando conexão MQTT...")
+        self._client.loop_stop()
+        self._client.disconnect()
 
-        except Exception as e:
-            logger.error("Timeout na primeira conexão com %s:%s!", self.broker, self.port)
-            exit(1)
+    # --- Callbacks Internos do Paho MQTT ---
+
 
     def _on_connect(self, client, userdata, flags, rc):
-        """Reinscreve em todos os tópis ao conectar - assíncrono
+        """Callback executado ao conectar (ou reconectar)."""
 
-        É uma função callback para quando a conexão com o broker for bem
-        sucedida. Se inscreve novmente em todos os tópicos cadastrados.
-
-        Atualiza a variável interna para permitir envio de mensagens mqtt.
-        """
         if rc == 0:
-            self._connected = True
-            logger.info("Conectado ao Broker com sucesso!")
+            self._is_connected = True
+            logger.info("Conectado ao Broker MQTT com sucesso!")
 
-            for topic in self._subscriptions:
-                self.client.subscribe(topic)
+            for topic in self._topics:
+                client.subscribe(topic)
+                logger.info("Inscrito no tópico: '%s'", topic)
         else:
-            logger.warning("Falha na conexão com o Broker. Código: %s", rc)
-
+            self._is_connected = False
+            logger.error("Falha na conexão com o Broker. Código de retorno: %s", rc)
+    
     def _on_disconnect(self, client, userdata, rc):
-        """Callback para quando a conexão com broker for encerrada
+        """Callback executado ao desconectar."""
+        self._is_connected = False
+        logger.warning("Desconectado do Broker MQTT. Código: %s", rc)
 
-        Como a reconexão é automática e assíncrona, apenas atualizamos o estado
-        interno da conexão para False e logamos
-        """
-        self._connected = False
-        logger.warning("Desconectado de %s:%s. Código: %s", self.broker, self.port, rc)
-    
-    def _on_message(self, client, userdata, msg):
-        """Callback padrão de recebimento de mensagens.
-
-        Aqui são recebidas todas as mensagens dos tópicos inscritos. Para cada tópico
-        é conferido se existe uma função callback registrada, se existe, é executada.
-        """
+    def _on_message(self, client, userdata, msg: MQTTMessage):
+        """Callback executado ao receber uma mensagem."""
         try:
-            raw_payload = msg.payload.decode()
-            payload = deserialize(raw_payload)
+            payload_str = msg.payload.decode('utf-8')
+            envelope = Envelope.model_validate_json(payload_str)
             
-            logger.debug(
-                "[MQTT::_on_message] Mensagem recebida | Tópico: '%s' | Payload: %s | Raw: %s",
-                msg.topic,
-                payload,
-                raw_payload,
-            )
-                
-            if msg.topic in self._subscriptions:
-                self._subscriptions[msg.topic](msg)
-                    
-        except Exception as e:
-            logger.error("[MQTT::_on_message] Erro ao processar mensagem do tópico '%s': %s", msg.topic, e)
-
-    def subscribe(self, topic: str, callback = None):
-        """Se inscreve em um tópico e salva função callback
-
-        Todos os tópicos e funções são salvadas internamente. Dessa forma
-        podemos re-inscrever nos tópicos em caso de quedas.
-
-        Args:
-            topic: String com o tópico que irá se inscrever.
-            callback: Uma função que será usada como callback e deve
-                esperar "msg".
-        """
-        self.client.subscribe(topic)
-        self._subscriptions[topic] = callback or (lambda x: None)
-        logger.info("Inscrito com sucesso no tópico: '%s'", topic)
-
-    def publish(self, topic: str, payload, qos: int = 0, retain: bool = False) -> bool:
-        """Publica uma mensagem em um tópico.
-        
-        É um encapsulamento de publish, com algumas verificações e travas para não
-        enviar mensagens quando está offline.
-
-        Args:
-            topic: Uma string com o tópico que irá publicar a mensagem.
-            payload: As informações que serão publicadas.
-            qos: Nível de qos da mensagem (padrão é 0).
-            retain: Se a mensagem deve ser retira ou não (padrão é False).
-
-        Returns:
-            Em caso de erros ou de mensagens inválidas, retorna False.
-
-            True, em caso de sucesso.
-        """
-        if not self._connected:
-            logger.warning("Tentativa de publicação sem conexão ativa | Tópico: '%s' | Payload: %s", topic, payload)
-            return False
-        
-        try:
-            if not isinstance(payload, str):
-                payload = serialize(payload)
+            # Coloca o envelope processado na fila para o `read()` pegar
+            self._inbox.put(envelope)
             
-            info = self.client.publish(topic, payload, qos=qos, retain=retain)
-            return info.rc == mqtt.MQTT_ERR_SUCCESS
-
+            logger.debug("Envelope do tópico '%s' adicionado à fila.", msg.topic)
+        except json.JSONDecodeError:
+            logger.warning("Recebida mensagem não-JSON no tópico '%s'. Ignorando.", msg.topic)
         except Exception as e:
-            logger.warning("Erro ao publicar MQTT | Tópico: '%s' | Payload: %s", topic, payload)
-            return False
-
-    def handleMessage(self, destination_info: dict, message:dict) -> bool:
-        """ Função para lidar com mensagens recebidas pelo Dispatcher
-        
-        Args:
-            destination_info: Dicionário com as informações do destinatário (tópico e protocolo).
-            message: Dicionário no padrão de mensagem da Bifrost.
-
-        Returns:
-            Bool: Em caso de sucesso, irá retornar True. Se ocorrer algum erro,
-                irá retornar False.  
-        """
-        base_topic = destination_info["topic"].rstrip("/")
-        payload = message.get("payload",{})
-
-        if isinstance(payload, dict):
-            for key, value in payload.items():
-                subtopic = f"{base_topic}/{key}"
-
-                logger.debug("Publicando em tópico: '%s' | Payload: %s", subtopic, payload)
-                self.publish(subtopic, value)
-        else:
-            logger.debug("Publicando em tópico: '%s' | Payload: %s", base_topic, payload)
-            self.publish(base_topic, payload)
-
-    def read(self) -> dict | None:
-        """Função padrão da bifrost para leitura dos Handlers
-        
-        Returns:
-            None
-        """
-        # TODO - AINDA NÃO IMPLMENTADA, PRECISA SER USADA COMO CALLBACK DOS SUBSCRIBES
-        return None
-    
-    def close(self):
-        """Função padrão da Bifrost para fechar a conexão, um encapsulamento de disconnect()"""
-        self.disconnect()
-
-    def disconnect(self):
-        """Desativa a reconexão e chama mqtt.disconnect()"""
-        self._should_reconnect = False
-        self.client.disconnect()
+            logger.error("Erro ao processar mensagem do tópico '%s': %s", msg.topic, e)
