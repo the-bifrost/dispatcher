@@ -1,14 +1,13 @@
 """Gerenciamento dos Envelopes da Bifrost."""
 
-import json
 import logging
 import time
-from typing import Any, Dict, Literal
+from typing import Any, Dict
 
 from pydantic import BaseModel, ValidationError
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 class Envelope(BaseModel):
     """Envelope padrão para mensagens da Bifrost"""
@@ -26,5 +25,5 @@ def parse_envelope(message: str) -> Envelope | None:
     try:
         return Envelope.model_validate_json(message)
     except ValidationError as e:
-        logger.info("Mensagem com formato inválido: %s", e)
+        # logger.info("Mensagem com formato inválido: %s", e)
         return None
