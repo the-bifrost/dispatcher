@@ -5,18 +5,21 @@ import logging.config
 
 from pathlib import Path
 
-from dispatcher import Dispatcher
+from core.dispatcher import Dispatcher
 from protocols import MqttHandler, EspNowHandler
 from utils.config_loader import load_config
-from utils.registry import DeviceRegistry
+from services.registry import DeviceRegistry
 
 cfg = load_config("config/config.toml")
+
+if not cfg:
+    exit(1)
 
 logger = logging.getLogger()
 
 
 def setup_logging():
-    logger_config = load_config(cfg.paths.logger_config)
+    logger_config = load_config(cfg["paths"]["logger_config"])
     logging.config.dictConfig(logger_config)
 
 
@@ -26,11 +29,11 @@ def main():
 
     logger.info("Iniciando Dispatcher...")
 
-    registry = DeviceRegistry(Path(__file__).parent / cfg.paths.device_registry)
+    registry = DeviceRegistry(Path(__file__).parent / cfg["paths"]["device_registry"])
     
     handlers = {
-        "MQTT": MqttHandler(cfg.mqtt.broker, cfg.mqtt.port),
-        "espnow": EspNowHandler(cfg.uart.ports[1], cfg.uart.baudrate),
+        "mqtt": MqttHandler(cfg["mqtt"]["broker"], cfg["mqtt"]["port"]),
+        "espnow": EspNowHandler(cfg["uart"]["ports"][1], cfg["uart"]["baudrate"]),
     }
 
     dispatcher = Dispatcher(registry=registry, handlers=handlers)
