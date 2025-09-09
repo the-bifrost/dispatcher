@@ -1,12 +1,18 @@
 """Modelo de padrão de dispositivos."""
 
-from typing import Literal, Union, Annotated, Optional
+from typing import Literal, Union, Annotated
 from pydantic import BaseModel, Field
+from abc import ABC, abstractmethod
 
-class BaseDevice(BaseModel):
+class BaseDevice(BaseModel, ABC):
     """Modelo base para qualquer dispositivo no registro."""
-    protocol: str
     device_type: str
+
+    @property
+    @abstractmethod
+    def destination(self) -> str:
+        """É a função que retorna o endereço/tópico/canal para este dispositivo."""
+        pass
 
 class EspNowDevice(BaseDevice):
     """Um dispositivo que se comunica via ESP-NOW."""
