@@ -1,20 +1,22 @@
 {
     "ESP_DHT11": {
-        "address": "4C:75:25:37:3F:59",
-        "protocol": "espnow"
+        "protocol": "espnow",
+        "device_type": "thermohygrometer",
+        "address": "4C:75:25:37:3F:59"
     },
     "termohigrometro": {
-        "address": "2C:F4:32:16:F5:17",
+        "protocol": "espnow",
         "device_type": "thermohygrometer",
-        "protocol": "espnow"
+        "address": "2C:F4:32:16:F5:17"
     },
     "termohigrometro-MQTT": {
-        "protocol": "MQTT",
+        "protocol": "mqtt",
         "device_type": "thermohygrometer",
         "topic": "sensores/termohigrometro"
     },
     "ESP_RTC": {
-        "address": "48:55:19:00:04:1E",
-        "protocol": "espnow"
+        "protocol": "espnow",
+        "device_type": "rtc-clock",
+        "address": "48:55:19:00:04:1E"
     }
 }
