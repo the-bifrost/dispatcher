@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Any
 
-from models.devices import Device
+from models.devices import Device, MqttDevice
 from utils.device_factory import create_device
 
 logger = logging.getLogger(__name__)
@@ -94,8 +94,7 @@ class DeviceRegistry():
             if is_match:
                 found_devices.append(device)
         
-        return found_devices
-        
+        return found_devices   
 
     def add(self, device_id: str, device_data: Device) -> bool:
         """Adiciona um dispositivo no registro a partir de um objeto Device."""
@@ -108,3 +107,13 @@ class DeviceRegistry():
             self.save()
             logger.info("Device '%s' foi registrado!", device_id)
             return True
+        
+    def get_mqtt_topics(self) -> List[str]:
+        """Retorna uma lista de tópicos dos dispositivos MQTT registrados."""
+        topics = []
+
+        for device in self.devices.values():
+            if isinstance(device, MqttDevice):
+                topics.append(device.topic)
+
+        return topics
