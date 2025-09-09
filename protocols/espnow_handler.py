@@ -39,13 +39,13 @@ class EspNowHandler(BaseHandler):
         # Devolve o resultado da conversão em um Envelope
         return parse_envelope(raw)
     
-    def write(self, envelope: Envelope, device: Device):
+    def write(self, envelope: Envelope, device: Device) -> bool:
         """Recebe um envelope e um dispositivo genérico, converte o envelope em json string e envia para a porta serial."""
 
         # Verifica se o dispositivo realmente é do tipo que o handler espera.
         if not isinstance(device, EspNowDevice):
             logger.error("Handler recebeu um tipo de dispositivo incorreto. Esperado: EspNowDevice, Recebido: %s", type(device).__name__)
-            return
+            return False
 
         # Faz um cópia local do envelope
         envelope_to_send = envelope.model_copy(deep=True)
@@ -58,6 +58,7 @@ class EspNowHandler(BaseHandler):
 
         #Chama a função para fazer o envio
         self._send_string(json_envelope)
+        return True
 
     def _send_string(self, data: str):
         """Converte string em bytes e envia para a porta serial"""

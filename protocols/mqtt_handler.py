@@ -75,16 +75,16 @@ class MqttHandler(BaseHandler):
         except Empty:
             return None
         
-    def write(self, envelope: Envelope, device: Device):
+    def write(self, envelope: Envelope, device: Device) -> bool:
         """Publica um envelope para o tópico associado ao dispositivo."""
 
         if not isinstance(device, MqttDevice):
             logger.error("Tentativa de escrita para um dispositivo não-MQTT. Dispositivo: %s", device.device_type)
-            return None
+            return False
             
         if not self._is_connected:
             logger.warning("Não foi possível publicar, cliente MQTT não conectado.")
-            return None
+            return False
             
         try:
             topic = device.topic
@@ -94,13 +94,13 @@ class MqttHandler(BaseHandler):
 
             if info.rc == mqtt.MQTT_ERR_SUCCESS:
                 logger.debug("Envelope publicado com sucesso no tópico '%s'", topic)
-                return
+                return True
             else:
                 logger.warning("Falha ao publicar no tópico '%s'. Código: %s", topic, info.rc)
-                return None
+                return False
         except Exception as e:
             logger.error("Erro inesperado durante a publicação MQTT: %s", e)
-            return None
+            return False
             
     def close(self):
         """Encerra a thread de rede e desconecta do broker."""
