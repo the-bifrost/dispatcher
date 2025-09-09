@@ -38,70 +38,69 @@ class MqttHandler(BaseHandler):
         self._client.on_message = self._on_message
         self._client.on_disconnect = self._on_disconnect
 
-        def start(self):
-            """Inicia a conexão com o broker e se inscreve nos tópicos fornecidos."""
-            logger.info("Conectando a %s:%s...", self._broker, self._port)
+    def start(self):
+        """Inicia a conexão com o broker e se inscreve nos tópicos fornecidos."""
+        logger.info("Conectando a %s:%s...", self._broker, self._port)
 
-            try:
-                self._client.connect(self._broker, self._port, 60)
-                self._client.loop_start()
-            except Exception as e:
-                raise MqttConnectionError(f"Falha na conexão inicial com {self._broker}:{self._port}: {e}") from e
+        try:
+            self._client.connect(self._broker, self._port, 60)
+            self._client.loop_start()
+        except Exception as e:
+            raise MqttConnectionError(f"Falha na conexão inicial com {self._broker}:{self._port}: {e}") from e
         
-        def subscribe(self, topic: str):
-            """Se inscreve em um novo tópico dinamicamente."""
-            if topic not in self._topics:
-                self._topics.add(topic)
-                
-                if self._is_connected:
-                    self._client.subscribe(topic)
-                    logger.info("Inscrito dinamicamente no tópico: '%s'", topic)
+    def subscribe(self, topic: str):
+        """Se inscreve em um novo tópico dinamicamente."""
+        if topic not in self._topics:
+            self._topics.add(topic)
+             
+            if self._is_connected:
+                self._client.subscribe(topic)
+                logger.info("Inscrito dinamicamente no tópico: '%s'", topic)
 
-        # NOVO MÉTODO
-        def unsubscribe(self, topic: str):
-            """Cancela a inscrição em um tópico dinamicamente."""
-            if topic in self._topics:
-                self._topics.remove(topic)
-                if self._is_connected:
-                    self._client.unsubscribe(topic)
-                    logger.info("Inscrição cancelada para o tópico: '%s'", topic)
+    def unsubscribe(self, topic: str):
+        """Cancela a inscrição em um tópico dinamicamente."""
+        if topic in self._topics:
+            self._topics.remove(topic)
+            if self._is_connected:
+                self._client.unsubscribe(topic)
+                logger.info("Inscrição cancelada para o tópico: '%s'", topic)
 
         # --- Implementação da Interface BaseHandler ---
 
-        def read(self) -> Envelope | None:
-            """Pega a próxima mensagem da fila (inbox) de forma não bloqueante."""
+    def read(self) -> Envelope | None:
+        """Pega a próxima mensagem da fila (inbox) de forma não bloqueante."""
 
-            try:
-                return self._inbox.get_nowait()
-            except Empty:
-                return None
+        try:
+            return self._inbox.get_nowait()
+        except Empty:
+            return None
         
-        def write(self, envelope: Envelope, device: Device) -> bool:
-            """Publica um envelope para o tópico associado ao dispositivo."""
+    def write(self, envelope: Envelope, device: Device):
+        """Publica um envelope para o tópico associado ao dispositivo."""
 
-            if not isinstance(device, MqttDevice):
-                logger.error("Tentativa de escrita para um dispositivo não-MQTT. Dispositivo: %s", device.device_type)
-                return False
+        if not isinstance(device, MqttDevice):
+            logger.error("Tentativa de escrita para um dispositivo não-MQTT. Dispositivo: %s", device.device_type)
+            return None
             
-            if not self._is_connected:
-                logger.warning("Não foi possível publicar, cliente MQTT não conectado.")
-                return False
+        if not self._is_connected:
+            logger.warning("Não foi possível publicar, cliente MQTT não conectado.")
+            return None
             
-            try:
-                topic = device.topic
-                json_payload = envelope.model_dump_json()
+        try:
+            topic = device.topic
+            json_payload = envelope.model_dump_json()
 
-                info = self._client.publish(topic, json_payload, qos=1)
+            info = self._client.publish(topic, json_payload, qos=1)
 
-                if info.rc == mqtt.MQTT_ERR_SUCCESS:
-                    logger.debug("Envelope publicado com sucesso no tópico '%s'", topic)
-                    return True
-                else:
-                    logger.warning("Falha ao publicar no tópico '%s'. Código: %s", topic, info.rc)
-                    return False
-            except Exception as e:
-                logger.error("Erro inesperado durante a publicação MQTT: %s", e)
-                return False
+            if info.rc == mqtt.MQTT_ERR_SUCCESS:
+                logger.debug("Envelope publicado com sucesso no tópico '%s'", topic)
+                return
+            else:
+                logger.warning("Falha ao publicar no tópico '%s'. Código: %s", topic, info.rc)
+                return None
+        except Exception as e:
+            logger.error("Erro inesperado durante a publicação MQTT: %s", e)
+            return None
             
     def close(self):
         """Encerra a thread de rede e desconecta do broker."""
