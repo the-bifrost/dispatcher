@@ -27,12 +27,13 @@ class EspNowDevice(BaseDevice):
 class MqttDevice(BaseDevice):
     """Um dispositivo ou tópico que se comunica via MQTT."""
     protocol:Literal["mqtt"]
-    topic: str
+    topic_in: str
+    topic_out: str
 
     @property
     def destination(self) -> str:
         """Retorna o endereço de destino para este tipo de dispositivo."""
-        return self.topic
+        return self.topic_out
 
 Device = Annotated[
     Union[EspNowDevice, MqttDevice],
