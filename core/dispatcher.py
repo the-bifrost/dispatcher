@@ -3,6 +3,7 @@
 import logging
 
 from models.devices import Device, EspNowDevice, MqttDevice
+from utils.device_factory import create_device
 from utils.envelope import Envelope
 from services.registry import DeviceRegistry
 from services.database import write_data, envelope_to_point_dict
@@ -31,13 +32,19 @@ class Dispatcher:
     def dispatch(self, message: Envelope):
         """Recebe um envelope válido e dispara conforme necessário."""
 
+        # Atenção!
+        # Desconmentar essa linha apenas para debbug do código.
+        #logger.debug("Mensagem recebida: %s", message)
+
         # 1. Requisições de Registro
         if self._is_register_request(message):
             self._handle_registration(message)
             return
         
         # 2. Verifica se o remetente é conhecido
-        source_devices = self._registry.search(address=message.src)
+        source_devices = self._registry.search(message.src)
+
+        logger.debug(source_devices)
 
         if not source_devices:
             self._request_registration(message)
@@ -47,8 +54,11 @@ class Dispatcher:
         source_device = source_devices[0]
         
         # 3. Roteia a mensagem para a central
-        if message.src == "central":
+        if message.dst == "central":
             logger.info(f"[CENTRAL] {message.src} -> central: {message.payload}")
+
+            point = envelope_to_point_dict(message=message, measurement=message.type)
+            write_data(point)
         else:
             self._route_to_device(message, source_device)
 
@@ -68,7 +78,7 @@ class Dispatcher:
         device_type = message.payload.get("device_type")
 
         if not device_id or not device_type:
-            logger.warning("Tentativa de registro sem 'id' no payload")
+            logger.warning("Tentativa de registro inválida. ID: %s | Device_Type: %s", device_id, device_type)
             return
         
         device_object: Device | None = None
@@ -83,7 +93,8 @@ class Dispatcher:
             device_object = MqttDevice(
                 protocol="mqtt",
                 device_type=device_type,
-                topic=message.src
+                topic_in=message.payload["topic_in"],
+                topic_out=message.payload["topic_out"]
             )
 
         if not device_object:
@@ -96,8 +107,8 @@ class Dispatcher:
         if is_new and isinstance(device_object, MqttDevice):
             mqtt_handler = self._handlers.get("mqtt")
             if mqtt_handler:
-                logger.info("Novo dispositivo MQTT registrado. Atualizando inscrição para o tópico: %s", device_object.topic)
-                mqtt_handler.subscribe(device_object.topic)
+                logger.info("Novo dispositivo MQTT registrado. Atualizando inscrição para o tópico: %s", device_object.topic_out)
+                mqtt_handler.subscribe(device_object.topic_out)
 
         if is_new:
             response_payload = { "status": "success", "device_id": device_id }
@@ -116,7 +127,7 @@ class Dispatcher:
         handler = self._handlers.get(message.protocol)
 
         if handler:
-            handler.send(response)
+            handler.write(response, device_object)
             logger.debug(f"{message.src} cadastrado com sucesso.")
         else:
             logger.error("Handler para o protocolo '%s' não encontrado para enviar resposta de registro.", message.protocol)
@@ -132,6 +143,27 @@ class Dispatcher:
             logger.error(f"Handler para protocolo '{message.protocol}' não encontrado para solicitar registro.")
             return
         
+        # Montando um dicionário com dados temporários do dispositivo
+        device_data = {
+            "protocol": message.protocol,
+            "device_type": "unknown"  # O tipo é desconhecido nesta fase, o que é ok
+        }
+        if message.protocol == "espnow":
+            device_data["address"] = message.src
+        elif message.protocol == "mqtt":
+            device_data["topic"] = message.src
+        else:
+            logger.error(f"Protocolo '{message.protocol}' não tem lógica para criar device temporário.")
+            return
+
+        # 2. Usa a factory para criar o objeto Device temporário
+        temp_device = create_device(device_data)
+
+        # 3. Garante que o objeto foi criado com sucesso
+        if not temp_device:
+            logger.error(f"Factory falhou ao criar device temporário para dados: {device_data}")
+            return
+        
         request = Envelope(
             v=1,
             protocol=message.protocol,
@@ -141,7 +173,7 @@ class Dispatcher:
             payload={"status":"not_registered"}
         )
 
-        handler.send(request)
+        handler.write(request, temp_device)
         logger.debug(f"{message.src} não cadastrado, solicitação de registro enviada.")
 
 
@@ -161,18 +193,19 @@ class Dispatcher:
             logger.debug(f"[DISPATCHER] Protocolo '{dest_protocol}' não implementado.")
             return
         
-        envelope = Envelope(
+        envelope_to_send = Envelope(
             v = 1,
-            protocol = dest_protocol,
+            protocol = dest_protocol,  
             src = message.src,
-            dst = destination_info.destination,
-            type= message.type,
-            payload=message.payload
+            dst = message.dst,
+            type = message.type,
+            payload = message.payload
         )
-        dest_handler.send(envelope)
+        
+        dest_handler.write(envelope_to_send, destination_info)
         
         logger.info(f"[DISPATCHER] '{message.src}' → '{destination_info}' via '{dest_protocol}'")
 
         # Escreve os dados no banco de dados
-        point = envelope_to_point_dict(message=envelope, measurement=source_info.device_type)
+        point = envelope_to_point_dict(message=envelope_to_send, measurement=source_info.device_type)
         write_data(point)
