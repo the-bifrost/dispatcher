@@ -202,10 +202,11 @@ class Dispatcher:
             payload = message.payload
         )
         
-        dest_handler.write(envelope_to_send, destination_info)
+        send_success = dest_handler.write(envelope_to_send, destination_info)
         
         logger.info(f"[DISPATCHER] '{message.src}' → '{destination_info}' via '{dest_protocol}'")
 
         # Escreve os dados no banco de dados
-        point = envelope_to_point_dict(message=envelope_to_send, measurement=source_info.device_type)
-        write_data(point)
+        if send_success:
+            point = envelope_to_point_dict(message=envelope_to_send, measurement=source_info.device_type)
+            write_data(point)
