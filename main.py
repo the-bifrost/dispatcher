@@ -9,6 +9,7 @@ from core.dispatcher import Dispatcher
 from protocols import MqttHandler, EspNowHandler
 from utils.config_loader import load_config
 from services.registry import DeviceRegistry
+from services.database import close_write_api
 
 cfg = load_config("config/config.toml")
 
@@ -51,6 +52,8 @@ def main():
     except KeyboardInterrupt:
         for handler in handlers.values():
             handler.close()
+
+        close_write_api()
 
         logger.info("Encerrando Dispatcher...")    
         exit(1)
