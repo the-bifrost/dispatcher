@@ -65,36 +65,22 @@ class DeviceRegistry():
         """Retorna o objeto Device de um dispositivo cadastrado pelo seu ID."""
         return self.devices.get(device_id)
     
-    def search(self, **kwargs: Any) -> List[Device]:
+    def search(self, identifier: Any) -> List[Device]:
         """Busca Dispositivos no registro que correspondem a um ou mais critérios."""
         found_devices: List[Device] = []
 
         # Se nenhum critério for dado, retorna uma lista vazia
-        if not kwargs:
+        if not identifier:
             return found_devices
         
         for device_id, device in self.devices.items():
-            is_match =  True
-
-            for key, value in kwargs.items():
-
-                # Verificação especial para o ID do dispositivos, que é a chave do dicionário
-                if key == 'device_id' and device_id != value:
-                    is_match = False
-                    break
-
-                # Usa hetattr para verificar de forma segura se o atibuto existe no objeto 
-                # e então se correspondem.
-                elif hasattr(device, key) and getattr(device, key) == value:
-                    continue
-                else:
-                    is_match = False
-                    break
-
-            if is_match:
+            # A lógica para checar múltiplos atributos permanece a mesma
+            if device_id == identifier or \
+            (hasattr(device, 'address') and getattr(device, 'address') == identifier) or \
+            (hasattr(device, 'topic') and getattr(device, 'topic') == identifier):
                 found_devices.append(device)
-        
-        return found_devices   
+            
+        return found_devices
 
     def add(self, device_id: str, device_data: Device) -> bool:
         """Adiciona um dispositivo no registro a partir de um objeto Device."""
@@ -114,6 +100,6 @@ class DeviceRegistry():
 
         for device in self.devices.values():
             if isinstance(device, MqttDevice):
-                topics.append(device.topic)
+                topics.append(device.topic_in)
 
         return topics
