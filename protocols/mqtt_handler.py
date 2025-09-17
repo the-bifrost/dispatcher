@@ -38,6 +38,8 @@ class MqttHandler(BaseHandler):
         self._client.on_message = self._on_message
         self._client.on_disconnect = self._on_disconnect
 
+        self.start()
+
     def start(self):
         """Inicia a conexão com o broker e se inscreve nos tópicos fornecidos."""
         logger.info("Conectando a %s:%s...", self._broker, self._port)
@@ -87,7 +89,7 @@ class MqttHandler(BaseHandler):
             return False
             
         try:
-            topic = device.topic
+            topic = device.destination
             json_payload = envelope.model_dump_json()
 
             info = self._client.publish(topic, json_payload, qos=1)
