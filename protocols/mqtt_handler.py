@@ -92,7 +92,7 @@ class MqttHandler(BaseHandler):
             topic = device.destination
             json_payload = envelope.model_dump_json()
 
-            info = self._client.publish(topic, json_payload, qos=1)
+            info = self._client.publish(topic, json_payload, qos=0)
 
             if info.rc == mqtt.MQTT_ERR_SUCCESS:
                 logger.debug("Envelope publicado com sucesso no tópico '%s'", topic)
