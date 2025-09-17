@@ -37,7 +37,7 @@ Para garantir a compatibilidade entre protocolos, as mensagens são enviadas den
 
 ## Para fazer
 
-- [ ] Implementar Callback do handlerMQTT
+- [X] Implementar Callback do handlerMQTT
 - [X] Registro dinâmico de dispositivos
 - [X] Requisitar cadastro de dispositivos desconhecidos.
 - [ ] Interface Web para Monitoramento dos dispositivos.
