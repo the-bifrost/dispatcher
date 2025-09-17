@@ -54,7 +54,7 @@ class EspNowHandler(BaseHandler):
         envelope_to_send.dst = device.address
 
         # Converte o Envelope em uma string JSON
-        json_envelope = envelope.model_dump_json()
+        json_envelope = envelope_to_send.model_dump_json()
 
         #Chama a função para fazer o envio
         self._send_string(json_envelope)
