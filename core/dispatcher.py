@@ -195,7 +195,7 @@ class Dispatcher:
         
         envelope_to_send = Envelope(
             v = 1,
-            protocol = dest_protocol,  
+            protocol = message.protocol,  
             src = message.src,
             dst = message.dst,
             type = message.type,
