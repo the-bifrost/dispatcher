@@ -50,6 +50,12 @@ def main():
                    dispatcher.dispatch(message)
     
     except KeyboardInterrupt:
+        logger.exception("Dispatcher encerrada pelo usuário.")
+
+    except Exception as e:
+        logger.exception("Ocorreu um erro inesperado: %s", e)
+
+    finally:
         for handler in handlers.values():
             handler.close()
 
