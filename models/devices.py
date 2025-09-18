@@ -34,8 +34,18 @@ class MqttDevice(BaseDevice):
     def destination(self) -> str:
         """Retorna o endereço de destino para este tipo de dispositivo."""
         return self.topic_out
+    
+class LoraDevice(BaseDevice):
+    """Um dispositivo ou tópico que se comunica via MQTT."""
+    protocol:Literal["lora"]
+    device_id: str
+
+    @property
+    def destination(self) -> str:
+        """Retorna o endereço de destino para este tipo de dispositivo."""
+        return self.device_id
 
 Device = Annotated[
-    Union[EspNowDevice, MqttDevice],
+    Union[EspNowDevice, MqttDevice, LoraDevice],
     Field(discriminator='protocol')
 ]
