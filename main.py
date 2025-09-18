@@ -2,6 +2,7 @@
 
 import logging
 import logging.config
+import time
 
 from pathlib import Path
 
@@ -43,11 +44,19 @@ def main():
 
     try:
         while True:
+            message_received = False
+
             for handler in handlers.values():
                 message = handler.read()
 
                 if message:
                    dispatcher.dispatch(message)
+                   message_received = True
+            
+            # Se nenhuma mensagem for processada, dorme por uns instantes
+            # Isso entrega o CPU de volta pro sistema.
+            if not message_received:
+                time.sleep(0.01)
     
     except KeyboardInterrupt:
         logger.exception("Dispatcher encerrada pelo usuário.")
