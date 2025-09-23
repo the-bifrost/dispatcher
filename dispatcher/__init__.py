@@ -1,1 +1,1 @@
-"Init da Dispatcher."
+"""Init da Dispatcher."""
