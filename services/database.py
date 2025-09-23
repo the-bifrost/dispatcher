@@ -23,7 +23,11 @@ org = os.environ.get("INFLUXDB_ORG", "Bifrost")
 bucket = os.environ.get("INFLUXDB_BUCKET", "Dispatch")
 
 # Inicializando o client do InfluxDB
-client = InfluxDBClient(url=url, token=token)
+client = InfluxDBClient(
+    url=url, 
+    token=token,
+    timeout=10_000
+)
 
 # Inicia a API de escrita usando client.
 write_api = client.write_api(write_options=SYNCHRONOUS)
