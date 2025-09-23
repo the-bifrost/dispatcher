@@ -7,7 +7,7 @@ logger_config = "config/logs.toml"
 ports = [
   "/dev/ttyS0",
   "/dev/ttyAMA2", #ESP-NOW
-  "/dev/ttyAMA3",  
+  "/dev/ttyAMA3", 
   "/dev/ttyAMA4",
   "/dev/ttyAMA5"  # LoRa
 ]
