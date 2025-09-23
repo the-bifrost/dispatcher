@@ -3,5 +3,8 @@
 paho-mqtt
 pyserial
 
+# Novos Imports Handler Libs Assincronas
+pyserial-asyncio
+
 # Data Libs
 pydantic
