@@ -2,7 +2,7 @@
 
 import logging
 
-from models.devices import Device, EspNowDevice, MqttDevice
+from models.devices import Device, EspNowDevice, MqttDevice, LoraDevice
 from utils.device_factory import create_device
 from utils.envelope import Envelope
 from services.registry import DeviceRegistry
@@ -96,7 +96,12 @@ class Dispatcher:
                 topic_in=message.payload["topic_in"],
                 topic_out=message.payload["topic_out"]
             )
-
+        elif message.protocol == "lora":
+            device_object = LoraDevice(
+                protocol="lora",
+                device_type=device_type,
+                device_id=message.src
+            )
         if not device_object:
             logger.error(f"Protocolo de registro desconhecido: {message.protocol}")
             return
