@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from core.dispatcher import Dispatcher
-from protocols import MqttHandler, EspNowHandler
+from protocols import MqttHandler, EspNowHandler, LoraHandler
 from utils.config_loader import load_config
 from services.registry import DeviceRegistry
 from services.database import close_write_api
@@ -36,6 +36,7 @@ def main():
     handlers = {
         "mqtt": MqttHandler(cfg["mqtt"]["broker"], cfg["mqtt"]["port"]),
         "espnow": EspNowHandler(cfg["uart"]["ports"][1], cfg["uart"]["baudrate"]),
+        "lora": LoraHandler(cfg["uart"]["ports"][4], cfg["uart"]["baudrate"])
     }
 
     dispatcher = Dispatcher(registry=registry, handlers=handlers)
