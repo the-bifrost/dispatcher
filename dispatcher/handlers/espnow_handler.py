@@ -1,86 +1,38 @@
-"""Handler para enviar e receber dados Seriais"""
+"""Handler ESP-NOW para enviar e receber dados sobre Serial."""
 
-import asyncio
 import logging
 
-import serial_asyncio
+from .base_serial_handler import BaseSerialHandler
 
 # Importações ANTIGAS
 from models.devices import Device, EspNowDevice
-from utils.envelope import Envelope, parse_envelope
+from utils.envelope import Envelope
 
-# Importações NOVAS
-from dispatcher.handlers import BaseHandler
+_LOGGER = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
+class EspNowHandler(BaseSerialHandler):
+    """Implementação do protocolo ESP-Now sobre Serial."""
 
-
-class EspNowHandler(BaseHandler):
-    """Implementação do BaseHandler para Comunicação Serial/ESP-NOW."""
-
-
-    def __init__(self, port: str, baudrate: int):
-        """Classe para fazer a Conexão/Envio/Recebimento de Dados Seriais."""
-        self.port = port
-        self.baudrate = baudrate
-
-        self.ser = serial.Serial(self.port, self.baudrate, timeout=1)
-        logger.info("Conectado à porta '%s' @ %dbps", self.port, self.baudrate)
-        
-    def read(self) -> Envelope | None:
-        """Faz a leitura na porta serial, valida e converte dados em um Envelope."""
-
-        if not self.ser.in_waiting:
-            return None
-        
-        # Lê dados na serial
-        raw = self.ser.readline().decode('utf-8', errors='ignore').strip()
-
-        # Filtro mínimo para descartar linhas vazias
-        if not raw or len(raw) < 3:  
-            return None
-
-        if not (raw.startswith('{') and raw.endswith('}')):
-            return None
-        
-        # Devolve o resultado da conversão em um Envelope
-        return parse_envelope(raw)
+    @property
+    def protocol(self) -> str:
+        return "espnow"
     
-    def write(self, envelope: Envelope, device: Device) -> bool:
-        """Recebe um envelope e um dispositivo genérico, converte o envelope em json string e envia para a porta serial."""
+    # __init__, start, read e close já estão implementados
+    
+    async def write(self, envelope: Envelope, device: Device) -> bool:
+        """Implementa a lógica de escrita específica para EspNow."""
 
-        # Verifica se o dispositivo realmente é do tipo que o handler espera.
         if not isinstance(device, EspNowDevice):
-            logger.error("Handler recebeu um tipo de dispositivo incorreto. Esperado: EspNowDevice, Recebido: %s", type(device).__name__)
+            _LOGGER.error("Tipo de dispositivo incorreto. Esperado: EspNowDevice, Recebido: %s", type(device).__name__)
             return False
-
-        # Faz um cópia local do envelope
+        
+        # Preparando envelope com a lógica específica do EspNow
         envelope_to_send = envelope.model_copy(deep=True)
-
-        # Troca o id do destino para o endereço físico do esp.
         envelope_to_send.dst = device.address
-
-        # Converte o Envelope em uma string JSON
         json_envelope = envelope_to_send.model_dump_json()
 
-        #Chama a função para fazer o envio
-        self._send_string(json_envelope)
-        return True
-
-    def _send_string(self, data: str):
-        """Converte string em bytes e envia para a porta serial"""
-
-        try:
-            self.ser.write(data.encode('utf-8') + b'\n')
-            logger.info("Enviado: '%s' para '%s' @ %dbps - ", data, self.port, self.baudrate)
-        except Exception as e:
-            logger.error("Falha ao enviar para a porta '%s': %s", self.port, e)
-
-    def close(self):
-        """Instancia a função .close() do pySerial"""
-        self.ser.close = self.close
+        # Escreve usando o método do pai
+        return await self._send_string(json_string=json_envelope)
+        
 
 
-if __name__ == "__main__":
-    try:
-        asyncio.run()
