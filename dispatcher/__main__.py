@@ -67,6 +67,7 @@ def main() -> int:
     logging.info("Dispatcher encerrado com sucesso.")
     return 0
 
+
 if __name__ == "__main__":
-    # Inicia a execução e passa o código de retorno para o sistema
+    # Inicia a Dispatcher e passa o código de retorno para o sistema após finalizar.
     sys.exit(main())
