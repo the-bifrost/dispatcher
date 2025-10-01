@@ -12,6 +12,7 @@ from dispatcher import core
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
+
 def ensure_config_path(config_dir: Path) -> None:
     """Valida a existência do diretório de configuração."""
 
