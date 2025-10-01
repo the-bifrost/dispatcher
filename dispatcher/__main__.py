@@ -7,9 +7,24 @@ import sys
 
 from pathlib import Path
 
-from . import core
+from dispatcher import core
+
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+
+def ensure_config_path(config_dir: Path) -> None:
+    """Valida a existência do diretório de configuração."""
+
+    if not config_dir.is_dir():
+        logging.warning("O diretório de configuração '%s' não foi encontrado", config_dir)
+
+        # Se não existir tenta criar o diretório e seus pais, 
+        # sem erros, caso já existam.
+        try:
+            config_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            logging.error("Não foi possível criar o diretório de configuração '%s': %s", config_dir, e)
+            sys.exit(1)
 
 
 def get_arguments() -> argparse.Namespace:
