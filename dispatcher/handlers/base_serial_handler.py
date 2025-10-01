@@ -5,11 +5,8 @@ import logging
 
 import serial_asyncio
 
-# Importações ANTIGAS
-from models.devices import Device, EspNowDevice
-from utils.envelope import Envelope, parse_envelope
-
-# Importações NOVAS
+from dispatcher.models.devices import Device, EspNowDevice
+from dispatcher.utils.envelope import Envelope, parse_envelope
 from dispatcher.handlers import BaseHandler
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,7 +70,7 @@ class BaseSerialHandler(BaseHandler):
             _LOGGER.error("Falha ao enviar para a porta '%s': %s", self.port, e)
             return False
 
-    def close(self):
+    async def close(self):
         """Implementação comum para fechar a conexão serial."""
         if self.writer:
             self.writer.close()

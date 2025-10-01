@@ -4,12 +4,12 @@ import logging
 
 from .base_serial_handler import BaseSerialHandler
 
-# Importações ANTIGAS
-from models.devices import Device, LoraDevice
-from utils.envelope import Envelope
+from dispatcher.models.devices import Device, LoraDevice
+from dispatcher.utils.envelope import Envelope
 
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class LoRaHandler(BaseSerialHandler):
     """Implementação do protocolo LoRa sobre Serial."""
@@ -17,6 +17,10 @@ class LoRaHandler(BaseSerialHandler):
     @property
     def protocol(self) -> str:
         return "lora"
+    
+    @property
+    def address_field(self) -> str:
+        return "device_id"
     
     # __init__, start, read e close já estão implementados
     

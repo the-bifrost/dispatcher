@@ -5,8 +5,8 @@ import logging
 from .base_serial_handler import BaseSerialHandler
 
 # Importações ANTIGAS
-from models.devices import Device, EspNowDevice
-from utils.envelope import Envelope
+from dispatcher.models.devices import Device, EspNowDevice
+from dispatcher.utils.envelope import Envelope
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,6 +16,10 @@ class EspNowHandler(BaseSerialHandler):
     @property
     def protocol(self) -> str:
         return "espnow"
+    
+    @property
+    def address_field(self) -> str:
+        return "address"
     
     # __init__, start, read e close já estão implementados
     
@@ -33,6 +37,6 @@ class EspNowHandler(BaseSerialHandler):
 
         # Escreve usando o método do pai
         return await self._send_string(json_string=json_envelope)
-        
+
 
 

@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from models.devices import Device
-from utils.envelope import Envelope
+from dispatcher.models.devices import Device
+from dispatcher.utils.envelope import Envelope
 
 class BaseHandler(ABC):
     """Contrato para todos os handlers de protocolo"""
@@ -13,6 +13,12 @@ class BaseHandler(ABC):
     @abstractmethod
     def protocol(self) -> str:
         """Retorna o nome do protocolo que o handler gerencia"""
+        pass
+
+    @property
+    @abstractmethod
+    def address_field(self) -> str:
+        """Retorna o nome do campo que o protocolo espera no dispositivo."""
         pass
 
     @abstractmethod
@@ -31,5 +37,5 @@ class BaseHandler(ABC):
         pass
 
     @abstractmethod
-    def close(self):
+    async def close(self):
         pass
