@@ -46,18 +46,16 @@ def get_arguments() -> argparse.Namespace:
 
 def main() -> int:
     """Start Dispatcher."""
-
     args = get_arguments()
-    config_path = Path(args.config).resolve()
-
-    if not config_path.is_dir():
-        logging.error("Erro: O diretório de configuração '%s' não foi encontrado", config_path)
-        return 1
     
-    logging.info(f"Usando diretório de configuração: {config_path}")
+    # Monta o caminho absoluto do diretório passado e valida sua existência.
+    config_dir = Path(args.config).resolve()
+    ensure_config_path(config_dir)
+
+    logging.info("Usando diretório de configuração: %s", config_dir)
 
     try:
-        asyncio.run(core.start(config_path=config_path))
+        asyncio.run(core.start(config_path=config_dir))
 
     except KeyboardInterrupt:
         logging.info("Recebido comando de encerramento (CTRL + C).")
