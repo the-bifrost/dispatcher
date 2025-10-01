@@ -37,7 +37,7 @@ def get_arguments() -> argparse.Namespace:
         "-c",
         "--config",
         metavar="path_to_config_dir",
-        default="config",
+        default="config/",
         help="Caminho para o diretório de configuração que contém config.toml e logs.toml"
     )
 
