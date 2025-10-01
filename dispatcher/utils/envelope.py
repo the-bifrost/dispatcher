@@ -9,6 +9,7 @@ from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
+
 class Envelope(BaseModel):
     """Envelope padrão para mensagens da Bifrost"""
     v: int
@@ -25,5 +26,4 @@ def parse_envelope(message: str) -> Envelope | None:
     try:
         return Envelope.model_validate_json(message)
     except ValidationError as e:
-        # logger.info("Mensagem com formato inválido: %s", e)
         return None
