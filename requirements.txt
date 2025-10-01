@@ -5,6 +5,7 @@ pyserial
 
 # Novos Imports Handler Libs Assincronas
 pyserial-asyncio
+aiomqtt
 
 # Data Libs
 pydantic
