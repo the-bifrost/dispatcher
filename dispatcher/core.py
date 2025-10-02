@@ -10,74 +10,80 @@ from pathlib import Path
 from dispatcher.dispatcher import Dispatcher
 from dispatcher.handlers import EspNowHandler, LoRaHandler, MqttHandler
 from dispatcher.services.registry import DeviceRegistry
+from dispatcher.services.database import close_write_api
 from dispatcher.utils.config_loader import load_config
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def setup_logging():
+def setup_logging(path: Path):
     """Faz o setup da configuração de Logs do sistema."""
-    logger_config = load_config(cfg["paths"]["logger_config"])
-    _LOGGER.config.dictConfig(logger_config)
+    logger_config = load_config(path)
+    logging.config.dictConfig(logger_config)
 
 
-# async def read_loop(handler, dispatcher: Dispatcher):
-#     """Uma tarefa de longe duração para ler mensagens de um handler e despachar"""
+async def read_loop(handler, dispatcher: Dispatcher):
+    """Uma tarefa de longe duração para ler mensagens de um handler e despachar"""
 
-#     protocol_name = handler.protocol.upper()
-#     _LOGGER.info(f"[{protocol_name}] Loop de leitura iniciado.")
+    protocol_name = handler.protocol.upper()
+    _LOGGER.info(f"[{protocol_name}] Loop de leitura iniciado.")
 
-#     try:
-#         while True:
-#             message = await handler.read()
-#             if message:
-#                 # O dispatcher agora processa a mensagem recebida
-#                 await dispatcher.dispatch(message)
-#     except asyncio.CancelledError:
-#         # Exceção esperada durante o desligamento
-#         _LOGGER.info(f"[{protocol_name}] Loop de leitura cancelado.")
-#     except Exception:
-#         # Captura qualquer outro erro inesperado no loop
-#         _LOGGER.exception(f"[{protocol_name}] Erro irrecuperável no loop de leitura. A tarefa será encerrada.")
+    try:
+        while True:
+            message = await handler.read()
+            if message:
+                # O dispatcher agora processa a mensagem recebida
+                await dispatcher.dispatch(message)
+    except asyncio.CancelledError:
+        # Exceção esperada durante o desligamento
+        _LOGGER.info(f"[{protocol_name}] Loop de leitura cancelado.")
+    except Exception:
+        # Captura qualquer outro erro inesperado no loop
+        _LOGGER.exception(f"[{protocol_name}] Erro irrecuperável no loop de leitura. A tarefa será encerrada.")
 
 
 async def start(config_path: Path):
     """Inicia o Loop Principal da Dispatcher."""
 
+    # Monta o caminho do arquivo de configurações
     config_file = config_path / "config.toml"
 
-    cfg = load_config(str(config_file))
+    cfg = load_config(config_file)
 
+    # Tenta salvar a chave dos paths, se não existe, se torna um dicionário vazio.
+    config_paths = cfg.get("paths", {})
 
+    # Inicializa as configs de logs, passando um nome padrão caso não existam configurações.
+    setup_logging(config_path / config_paths.get("logger_config", "logs.toml"))
 
+    # =========================
+    # SETUP DA ASSÍNCRONICIDADE
+    # =========================
 
-
-    return
-    # --- 1. CARREGAMENTO E CONFIGURAÇÃO INICIAL ---
     stop_event = asyncio.Event()
-
-    # --- 2. CONFIGURAÇÃO DO SHUTDOWN GRACIOSO ---
     loop = asyncio.get_running_loop()
 
     def handle_signal(sig):
         """Função interna para lidar com sinais do SO."""
-        _LOGGER.warning(f"Sinal de encerramento {sig.name} recebido.")
+        _LOGGER.warning("Sinal de encerramento %s recebido.", sig.name)
         stop_event.set()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, handle_signal, sig)
 
-    # --- 3. INICIALIZAÇÃO DOS COMPONENTES ---
+    # =========================
+    # Inicializando componentes
+    # =========================
+
     _LOGGER.info("Iniciando o serviço Bifrost Dispatcher...")
     
-    registry = DeviceRegistry(Path(config_path).parent / cfg.paths.device_registry)
+    registry = DeviceRegistry(config_path / config_paths.get("device_registry", "devices.json"))
     
     # Cria uma lista com todos os handlers que queremos iniciar
-    # Esta é a única parte que você precisa alterar para adicionar/remover protocolos
     handlers_to_start = [
         EspNowHandler(cfg.uart.ports[1], cfg.uart.baudrate),
-        # LoraHandler(cfg.uart.ports[4], cfg.uart.baudrate), # Descomente para ativar
+        LoRaHandler(cfg.uart.ports[4], cfg.uart.baudrate), # Descomente para ativar
         MqttHandler(cfg.mqtt.broker, cfg.mqtt.port),
     ]
     
@@ -98,23 +104,20 @@ async def start(config_path: Path):
     
     _LOGGER.info("Bifrost Dispatcher iniciado e operacional.")
     
-    # --- 5. AGUARDA O SINAL DE PARADA ---
+    # ======================================
+    # ESPERA EVENTO PARA ENCERRAR ASSÍNCRONO
+    # ======================================
+
     await stop_event.wait()
     
-    # --- 6. PROCESSO DE ENCERRAMENTO ---
     _LOGGER.info("Iniciando processo de encerramento...")
     
-    # Cancela as tarefas de leitura
     for task in tasks:
         task.cancel()
     
-    # Espera que todas as tarefas de leitura terminem seu cancelamento
-    await asyncio.gather(*tasks, return_exceptions=True)
-    
-    # Fecha as conexões dos handlers em paralelo
+    await asyncio.gather(*tasks, return_exceptions=True)    
     await asyncio.gather(*(handler.close() for handler in active_handlers.values()))
 
-    # Aqui você pode adicionar o fechamento de outras conexões, como a do banco de dados
-    # close_write_api()
+    close_write_api()
     
     _LOGGER.info("Serviço encerrado de forma limpa.")
