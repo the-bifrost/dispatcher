@@ -7,7 +7,9 @@ from pydantic import TypeAdapter, ValidationError
 
 from dispatcher.models.devices import Device
 
+
 logger = logging.getLogger(__name__)
+
 
 # Cria um validador global para registrar os dispositivos
 try:
