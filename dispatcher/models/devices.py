@@ -21,7 +21,7 @@ class EspNowDevice(BaseDevice):
 
     @property
     def destination(self) -> str:
-        """Retorna o endereço de destino para este tipo de dispositivo."""
+        """Retorna o endereço MAC do dispositivo de destino."""
         return self.address
 
 class MqttDevice(BaseDevice):
@@ -32,17 +32,17 @@ class MqttDevice(BaseDevice):
 
     @property
     def destination(self) -> str:
-        """Retorna o endereço de destino para este tipo de dispositivo."""
+        """Retorna o tópico que o destino espera dados."""
         return self.topic_out
     
 class LoraDevice(BaseDevice):
-    """Um dispositivo ou tópico que se comunica via MQTT."""
+    """Um dispositivo que se Comunica via LoRa."""
     protocol:Literal["lora"]
     device_id: str
 
     @property
     def destination(self) -> str:
-        """Retorna o endereço de destino para este tipo de dispositivo."""
+        """Retorna o id do dispositivo."""
         return self.device_id
 
 Device = Annotated[
