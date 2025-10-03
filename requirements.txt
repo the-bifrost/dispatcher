@@ -1,11 +1,12 @@
 
-# Handler Libs
+# Libs dos Componentes
 paho-mqtt
 pyserial
 
-# Novos Imports Handler Libs Assincronas
+# Libs Assincronas dos Componentes
 pyserial-asyncio
 aiomqtt
 
-# Data Libs
+# Libs para Controle de Dados
 pydantic
+pydantic_settings
