@@ -1,5 +1,5 @@
 
 # Scripts de Desenvolvimento
 
-- `examplo`: Descrição da funcionalidade do Script. Executar `assim`.
+- `docker.sh`: Faz a instalação oficial do docker e adiciona o usuário ao grupo docker. Executar `sudo ./install-docker.sh`.
 
