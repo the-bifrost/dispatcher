@@ -1,0 +1,1 @@
+"""Camada de acesso e persistência de dados."""

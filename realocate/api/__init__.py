@@ -1,0 +1,1 @@
+"""Módulo criado para API futura. NÃO IMPLEMENTADO."""
