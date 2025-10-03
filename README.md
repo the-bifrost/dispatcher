@@ -18,6 +18,10 @@ Para garantir a compatibilidade entre protocolos, as mensagens são enviadas den
 }
 ```
 
+# Arquitetura do Software
+
+Event-Driven Aplication (EDA)
+
 ## Tutoriais
 
 - [Liberar portas UART do Raspberry Pi 5](/docs/habilitando-uart-raspberry.md)
@@ -37,10 +41,5 @@ Para garantir a compatibilidade entre protocolos, as mensagens são enviadas den
 
 ## Para fazer
 
-- [X] Implementar Callback do handlerMQTT
-- [X] Registro dinâmico de dispositivos
-- [X] Requisitar cadastro de dispositivos desconhecidos.
-- [X] Roteamento entre protocolos.
-- [ ] Otimizações nos Roteamentos.
-- [ ] Otimizar o funcionamento para serviços.
-- [ ] Interface Web para Monitoramento dos dispositivos.
+- [ ] Trabalhar com Assíncronicidade
+- [ ] Implementar Arquitetura EDA
