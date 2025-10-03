@@ -56,7 +56,8 @@ def main() -> int:
     logging.info("Usando diretório de configuração: %s", config_dir)
 
     try:
-        asyncio.run(core.start(config_path=config_dir))
+        #asyncio.run(core.start(config_path=config_dir))
+        pass
 
     except KeyboardInterrupt:
         logging.info("Recebido comando de encerramento (CTRL + C).")

@@ -10,3 +10,4 @@ aiomqtt
 # Libs para Controle de Dados
 pydantic
 pydantic_settings
+sqlalchemy

@@ -1,1 +1,0 @@
-"""Arquivo Init dos Serviços."""
