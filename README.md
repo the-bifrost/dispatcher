@@ -1,6 +1,6 @@
 # Bifrost Dispatcher
 
-O Dispatcher é o núcleo de roteamento da central Bifrost, responsável por receber mensagens de múltiplos protocolos, identificar seus destinos e repassá-las corretamente entre os dispositivos conectados.
+A Dispatcher é o *núcleo de roteamento da central* Bifrost, responsável por receber mensagens de múltiplos protocolos, identificar seus destinos e repassá-las corretamente entre os dispositivos conectados.
 
 ## Formato de comunicação padrão.
 
@@ -26,10 +26,9 @@ Event-Driven Aplication (EDA)
 
 - [Liberar portas UART do Raspberry Pi 5](/docs/habilitando-uart-raspberry.md)
 
-
 ## Funcionalidades
 
-- 🔌 Inicializa múltiplos protocolos de comunicação (MQTT e Serial).
+- 🔌 Inicializa múltiplos protocolos de comunicação.
 
 - 📦 Despacha mensagens entre dispositivos de acordo com o protocolo.
 
