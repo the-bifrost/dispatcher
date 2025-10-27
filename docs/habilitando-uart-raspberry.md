@@ -16,9 +16,9 @@ sudo raspi-config
 
 Vá em: Interface Options → Serial Port
 
-Escolha: Login shell: No
+Escolha: Login shell: **No**
 
-Escolha: Serial port hardware: Yes
+Escolha: Serial port hardware: **Yes**
 
 ---
 
@@ -27,8 +27,10 @@ Escolha: Serial port hardware: Yes
 ```bash
 sudo nano /boot/firmware/cmdline.txt
 ```
-Substitua console=serial0 ou console=ttyAMA0 por:
-```
+
+Substitua **console=serial0** ou **console=ttyAMA0** por:
+
+```bash
 console=tty1
 ```
 
@@ -59,4 +61,4 @@ dtoverlay=uart5
 sudo reboot
 ```
 
-Após o reboot, as UARTs estarão disponíveis em /dev/ttyAMA* ou /dev/ttyS*.
+Após o reboot, as UARTs estarão disponíveis em **/dev/ttyAMA\*** ou **/dev/ttyS\***.
