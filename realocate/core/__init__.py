@@ -1,1 +1,0 @@
-"""O cérebro da Aplicação."""

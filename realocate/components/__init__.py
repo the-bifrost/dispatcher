@@ -1,1 +1,0 @@
-"""Nova implementação dos Handlers. São os Drivers de Protocolo."""
