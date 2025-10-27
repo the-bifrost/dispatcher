@@ -1,6 +1,6 @@
 # .ignore customizados
 *.log.*
-local_workspace/
+.local_workspace/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
