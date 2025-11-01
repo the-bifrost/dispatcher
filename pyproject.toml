@@ -1,0 +1,5 @@
+[project]
+name = "dispatcher"
+version = "0.0.1"
+description = "Despacha mensagens entre dispositivos de acordo com o protocolo."
+readme = "README.md"
