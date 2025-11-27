@@ -6,5 +6,4 @@ Essa documentação busca explicar e demonstrar os passos necessários para roda
 ## Hardware
 
 - [Liberando Portas UART no Raspberry Pi 4](habilitando-uart-raspberry.md)
-]
 
