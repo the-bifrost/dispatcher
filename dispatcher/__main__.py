@@ -56,7 +56,6 @@ def main() -> int:
     """Start Dispatcher."""
     args = get_arguments()
     
-    # Monta o caminho absoluto do diretório passado e valida sua existência.
     config_dir = Path(args.config).resolve()
     ensure_config_path(config_dir)
 
@@ -68,8 +67,7 @@ def main() -> int:
 
     # Inicia a Dispatcher
     try:
-        #asyncio.run(core.start(config_path=config_dir))
-        pass
+        asyncio.run(start(settings))
 
     except KeyboardInterrupt:
         _LOGGER.info("Recebido comando de encerramento (CTRL + C).")
