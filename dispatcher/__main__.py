@@ -7,7 +7,7 @@ import logging.config
 import sys
 from pathlib import Path
 
-from settings import load_config_file, load_configuration, Settings
+from settings import load_config_file, load_configuration
 from start import start
 
 _LOGGER = logging.getLogger(__name__)
