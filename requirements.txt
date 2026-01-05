@@ -1,15 +1,19 @@
-# Libs base
+# Libs de Configurações
 pyyaml
-
-# Libs dos Componentes
-paho-mqtt
-pyserial
-
-# Libs Assincronas dos Componentes
-pyserial-asyncio
-aiomqtt
-
-# Libs para Controle de Dados
 pydantic
 pydantic_settings
-sqlalchemy
+
+# Libs de Protocolos
+pyserial
+pyserial-asyncio
+#paho-mqtt
+#aiomqtt
+
+
+
+
+
+
+
+# Libs para Controle de Dados
+#sqlalchemy
