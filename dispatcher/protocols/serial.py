@@ -1,0 +1,62 @@
+"""Protocolo Base para Conexões que dependem de Serial."""
+import asyncio
+import logging
+from typing import Optional, cast
+
+from event_bus import event_bus
+from utils.const import EventState
+from utils.envelope import Envelope, parse_envelope
+
+
+_LOGGER = logging.getLogger(__name__)
+
+
+class BaseSerialProtocol(asyncio.Protocol):
+    """Classe base para qualquer protocolo serial na Bifrost."""
+
+    def __init__(self, protocol_name: str):
+        self.protocol_name = protocol_name
+        self.transport: Optional[asyncio.Transport] = None
+        self._buffer = b""
+
+    def connection_made(self, transport) -> None:
+        """Salva a conexão e registra callbacks, caso a conexão for bem sucedida."""
+        self.transport = cast(asyncio.Transport, transport)
+        _LOGGER.info("[%s] Porta aberta: %s", self.protocol_name, transport.get_extra_info('name'))
+
+        # Registra nos eventos do EventBus
+        event_bus.subscribe(EventState.STATE_CHANGED.value, self.handle_event)
+        event_bus.subscribe(f"{EventState.SEND_TO.value}{self.protocol_name.lower()}", self.handle_event)
+
+    def data_received(self, data: bytes) -> None:
+        """Calback acionado de forma assíncrona pelo event loop."""
+        self._buffer += data
+
+        if b'\n' in self._buffer:
+            lines = self._buffer.split(b'\n')
+            self._buffer = lines.pop()
+
+            for line in lines:
+                decoded_line = line.decode(errors='ignore').strip()
+
+                if decoded_line:
+                    envelope = parse_envelope(decoded_line)
+
+                    if envelope:
+                        asyncio.create_task(event_bus.publish(EventState.STATE_CHANGED.value, envelope))
+
+                    else:
+                        _LOGGER.warning("[%s] JSON Inválido ou fora do envelope: %s", self.protocol_name, decoded_line)
+
+
+    async def handle_event(self, envelope_data: Envelope):
+        """Recebe dados do EventBus e envia para a Serial."""
+
+        if self.transport:
+            message = envelope_data.model_dump_json() + "\n"
+            self.transport.write(message.encode())
+            _LOGGER.debug("[%s] Enviado via serial: %s", self.protocol_name, message.strip())
+
+    def connection_lost(self, exc: Exception | None) -> None:
+        """Lida com problemas de conexão."""
+        _LOGGER.error("[%s] Porta Serial Fechada: %s", self.protocol_name, exc)        
