@@ -2,17 +2,18 @@
 device_registry: "devices.json"
 logger_config: "logs.yaml"
 
-espnow:
-  port: "/dev/ttyAMA2" 
-  baudrate: 9600
-
 lora:
-  port: "/dev/ttyAMA5"
+  port: "/dev/pts/13"
   baudrate: 9600 
 
-mqtt:
-  hosst: "localhost"
-  port: 1883
+#espnow:
+#  port: "/dev/ttyAMA2" 
+#  baudrate: 9600
+
+
+#mqtt:
+#  hosst: "localhost"
+#  port: 1883
 
 #database:
 #  host:
