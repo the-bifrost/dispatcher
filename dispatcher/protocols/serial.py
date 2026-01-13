@@ -3,7 +3,7 @@ import asyncio
 import logging
 from typing import Optional, cast
 
-from event_bus import event_bus
+from core.event_bus import event_bus
 from utils.const import EventState
 from utils.envelope import Envelope, parse_envelope
 
