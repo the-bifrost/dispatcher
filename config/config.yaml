@@ -3,6 +3,7 @@ device_registry: "devices.json"
 logger_config: "logs.yaml"
 
 lora:
+  port: "/dev/pts/13"
   baudrate: 9600 
 
 #espnow:
