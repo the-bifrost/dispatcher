@@ -26,8 +26,12 @@ async def setup_protocol(raw_config: dict):
     """Faz o setup assíncrono do LoRa."""
     
     # Carrega configurações
-    config = LoraConfig(**raw_config)
-
+    try:
+        config = LoraConfig(**raw_config)
+    except (TypeError, ValueError) as e:
+        _LOGGER.error(f"Erro de validação [{type(e).__name__}]: {e.__cause__}")
+        return
+    
     # Pega o loop atual
     loop = asyncio.get_event_loop()
 
