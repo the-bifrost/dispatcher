@@ -25,7 +25,6 @@ class BaseSerialProtocol(asyncio.Protocol):
         _LOGGER.info("[%s] Porta aberta: %s", self.protocol_name, transport.get_extra_info('name'))
 
         # Registra nos eventos do EventBus
-        event_bus.subscribe(EventState.STATE_CHANGED.value, self.handle_event)
         event_bus.subscribe(f"{EventState.SEND_TO.value}{self.protocol_name.lower()}", self.handle_event)
 
     def data_received(self, data: bytes) -> None:
