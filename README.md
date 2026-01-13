@@ -40,5 +40,7 @@ Event-Driven Aplication (EDA)
 
 ## Para fazer
 
-- [ ] Trabalhar com Assíncronicidade
-- [ ] Implementar Arquitetura EDA
+- [X] Implementar Arquitetura EDA
+- [X] Protocolos Serial Assíncronos
+- [ ] Mqtt Assíncrono
+- [ ] DeviceRegistry baseado em eventos
