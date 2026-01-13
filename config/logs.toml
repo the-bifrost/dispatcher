@@ -32,20 +32,20 @@ backupCount = 3
 # Loggers
 #
 [loggers."protocols.mqtt_handler"]
-level     = "DEBUG"
+level     = "INFO"
 handlers  = ["console", "file"]
 propagate = false
 
 [loggers."protocols.serial_handler"]
-level     = "DEBUG"
+level     = "INFO"
 handlers  = ["console", "file"]
 propagate = false
 
 [loggers."utils.registry"]
-level     = "DEBUG"
+level     = "INFO"
 handlers  = ["console", "file"]
 propagate = false
 
 [loggers.root]
-level    = "DEBUG"
+level    = "INFO"
 handlers = ["console", "file"]
