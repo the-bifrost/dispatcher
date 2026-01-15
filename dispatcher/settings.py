@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     # Configurações de logs
     logger_config_path: str = "logs.yaml"
 
+    # Configurações do registry
+    registry_db_path: str = "db/devices.db"
+    registry_db_schema_path: str = "db/schema.sql"
+
     # env_file='.env' carrega as variáveis de ambiente
     # extra='allow' permite carregar tudo o que estiver no Yaml 
     model_config = SettingsConfigDict(env_file=".env", extra='allow')
