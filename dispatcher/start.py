@@ -8,8 +8,8 @@ from pathlib import Path
 
 import protocols
 from core.device_registry import DeviceRegistry
+from core.router import Router
 from settings import Settings
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,21 +41,25 @@ async def discover_protocols(settings: Settings):
 
 
 async def start(config_dir: Path, settings: Settings):
-    _LOGGER.debug("Inicializando a Bifrost")
+    _LOGGER.info("Inicializando a Bifrost")
 
-    _LOGGER.debug("Inicializando o DeviceRegistry")
+    _LOGGER.info("Inicializando o DeviceRegistry")
     registry = DeviceRegistry(
         db_path=config_dir / settings.registry_db_path, 
         schema_path=config_dir / settings.registry_db_schema_path)
     
     await registry.initialize()
+    _LOGGER.info("Registry Inicicializado!")
 
-    # 2. Inicia Router (ele já se inscreve nos eventos no __init__)
-    # router = Router()
 
-    _LOGGER.debug("Carregando Protocolos")
+    _LOGGER.info("Iniciando Router de Mensagens.")
+    router = Router()
+    _LOGGER.info("Router Inicicializado!")
+
+    _LOGGER.info("Carregando Protocolos")
     await discover_protocols(settings)
+    _LOGGER.info("Protocolos Inicicializado!")
 
 
-    _LOGGER.debug("Bifrost Iniciada!")
+    _LOGGER.info("Bifrost Iniciada!")
     await asyncio.Future()
