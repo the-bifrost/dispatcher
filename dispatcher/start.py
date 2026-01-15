@@ -34,7 +34,7 @@ async def discover_protocols(settings: Settings):
             conf = getattr(settings, module_name, None)
 
             if conf:
-                _LOGGER.debug("Existe uma configuração para o módulo %s, inicando uma task assíncrona", module_name)
+                _LOGGER.info("Existe uma configuração para o módulo %s, inicando uma task assíncrona", module_name)
                 asyncio.create_task(module.setup_protocol(conf))
         else:
             _LOGGER.debug("Módulo %s não tem uma função de setup!", module_name)
@@ -49,16 +49,16 @@ async def start(config_dir: Path, settings: Settings):
         schema_path=config_dir / settings.registry_db_schema_path)
     
     await registry.initialize()
-    _LOGGER.info("Registry Inicicializado!")
+    _LOGGER.info("Registry Inicializado!")
 
 
     _LOGGER.info("Iniciando Router de Mensagens.")
     router = Router()
-    _LOGGER.info("Router Inicicializado!")
+    _LOGGER.info("Router Inicializado!")
 
     _LOGGER.info("Carregando Protocolos")
     await discover_protocols(settings)
-    _LOGGER.info("Protocolos Inicicializado!")
+    _LOGGER.info("Protocolos Inicializado!")
 
 
     _LOGGER.info("Bifrost Iniciada!")
