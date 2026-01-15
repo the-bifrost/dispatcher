@@ -7,6 +7,7 @@ import pkgutil
 from pathlib import Path
 
 import protocols
+from core.device_registry import DeviceRegistry
 from settings import Settings
 
 
@@ -42,9 +43,19 @@ async def discover_protocols(settings: Settings):
 async def start(config_dir: Path, settings: Settings):
     _LOGGER.debug("Inicializando a Bifrost")
 
+    _LOGGER.debug("Inicializando o DeviceRegistry")
+    registry = DeviceRegistry(
+        db_path=config_dir / settings.registry_db_path, 
+        schema_path=config_dir / settings.registry_db_schema_path)
+    
+    await registry.initialize()
+
+    # 2. Inicia Router (ele já se inscreve nos eventos no __init__)
+    # router = Router()
 
     _LOGGER.debug("Carregando Protocolos")
     await discover_protocols(settings)
+
 
     _LOGGER.debug("Bifrost Iniciada!")
     await asyncio.Future()
