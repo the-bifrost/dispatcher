@@ -7,15 +7,10 @@ import aiosqlite
 
 from core.event_bus import event_bus
 from utils.envelope import Envelope
+from utils.const import ProtocolEvent, DeviceEvent
 
 
 _LOGGER = logging.getLogger(__name__)
-
-
-# Eventos
-EVENT_PROTOCOL_RECEIVED = "protocol.message_received"
-EVENT_DEVICE_VALIDATED = "device.message_validated"
-EVENT_DEVICE_UNKNOWN = "device.unknown"
 
 
 class DeviceRegistry:
@@ -24,7 +19,8 @@ class DeviceRegistry:
         self.schema_path = schema_path
 
         # Inscreve-se para ouvir mensagens brutas dos protocolos
-        event_bus.subscribe(EVENT_PROTOCOL_RECEIVED, self.handle_protocol_message)
+        event_bus.subscribe(ProtocolEvent.MESSAGE_RECEIVED.value, self.handle_protocol_message)
+        event_bus.subscribe(DeviceEvent.REGISTER_REQUEST.value, self.add_device)
 
     async def initialize(self):
         """Inicializa o banco de dados."""
@@ -74,13 +70,13 @@ class DeviceRegistry:
         if device:
             _LOGGER.debug("Dispositivo autenticado via DB: %s", sender_id)
             # Publica o evento de sucesso com os dados do banco anexados
-            await event_bus.publish(EVENT_DEVICE_VALIDATED, {
+            await event_bus.publish(DeviceEvent.MESSAGE_VALIDATED.value, {
                 "envelope": envelope,
                 "device": device
             })
         else:
             _LOGGER.warning("Dispositivo não registrado no DB: %s", sender_id)
-            await event_bus.publish(EVENT_DEVICE_UNKNOWN, envelope)
+            await event_bus.publish(DeviceEvent.UNKNOWN.value, envelope)
 
     async def add_device(self, device_id: str, protocol: str, config: dict, token: str | None = None):
         """Adiciona Dispositivos Dinamicamente."""
