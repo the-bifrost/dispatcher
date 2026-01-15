@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def discover_protocols(settings: Settings):
-    """Descobre e faz a importação de todos os protocolos, mesmo que não esteja configurado."""
+    """Descobre e faz a importação de todos os protocolos, só faz setup dos que estão configurados."""
     _LOGGER.debug("Descobrindo Protocolos...")
 
     for loader, module_name, is_pkg in pkgutil.iter_modules(protocols.__path__):
@@ -51,15 +51,13 @@ async def start(config_dir: Path, settings: Settings):
     await registry.initialize()
     _LOGGER.info("Registry Inicializado!")
 
-
     _LOGGER.info("Iniciando Router de Mensagens.")
     router = Router()
-    _LOGGER.info("Router Inicializado!")
+    _LOGGER.info("Sucesso ao iniciar o Router!")
 
     _LOGGER.info("Carregando Protocolos")
     await discover_protocols(settings)
-    _LOGGER.info("Protocolos Inicializado!")
-
+    _LOGGER.info("Finalizou inicialização dos protocolos!")
 
     _LOGGER.info("Bifrost Iniciada!")
     await asyncio.Future()
