@@ -67,7 +67,7 @@ def main() -> int:
 
     # Inicia a Dispatcher
     try:
-        asyncio.run(start(settings))
+        asyncio.run(start(config_dir, settings))
 
     except KeyboardInterrupt:
         _LOGGER.info("Recebido comando de encerramento (CTRL + C).")

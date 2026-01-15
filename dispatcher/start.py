@@ -4,6 +4,7 @@ import asyncio
 import logging
 import importlib
 import pkgutil
+from pathlib import Path
 
 import protocols
 from settings import Settings
@@ -38,7 +39,7 @@ async def discover_protocols(settings: Settings):
             _LOGGER.debug("Módulo %s não tem uma função de setup!", module_name)
 
 
-async def start(settings: Settings):
+async def start(config_dir: Path, settings: Settings):
     _LOGGER.debug("Inicializando a Bifrost")
 
 
