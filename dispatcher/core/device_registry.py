@@ -6,9 +6,8 @@ from pathlib import Path
 import aiosqlite
 
 from core.event_bus import event_bus
+from core.events import Events
 from utils.envelope import Envelope
-from utils.const import ProtocolEvent, DeviceEvent
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,8 +18,7 @@ class DeviceRegistry:
         self.schema_path = schema_path
 
         # Inscreve-se para ouvir mensagens brutas dos protocolos
-        event_bus.subscribe(ProtocolEvent.MESSAGE_RECEIVED.value, self.handle_protocol_message)
-        event_bus.subscribe(DeviceEvent.REGISTER_REQUEST.value, self.add_device)
+        event_bus.subscribe(Events.Protocol.RECEIVED, self.handle_protocol_message)
 
     async def initialize(self):
         """Inicializa o banco de dados."""
@@ -58,25 +56,17 @@ class DeviceRegistry:
         return None
 
     async def handle_protocol_message(self, envelope: Envelope):
-        """
-        Callback acionado pelo EventBus.
-        1. Recebe envelope bruto.
-        2. Consulta SQLite.
-        3. Publica resultado (Validado ou Desconhecido).
-        """
+        """Calback acionado pelo EventBus, recebe envelope bruto, consulta SQLite, publica resultado."""
         sender_id = envelope.src
         device = await self.get_device(sender_id)
 
         if device:
             _LOGGER.debug("Dispositivo autenticado via DB: %s", sender_id)
             # Publica o evento de sucesso com os dados do banco anexados
-            await event_bus.publish(DeviceEvent.MESSAGE_VALIDATED.value, {
-                "envelope": envelope,
-                "device": device
-            })
+            await event_bus.publish(Events.Device.VALIDATED, {"envelope": envelope, "device": device})
         else:
             _LOGGER.warning("Dispositivo não registrado no DB: %s", sender_id)
-            await event_bus.publish(DeviceEvent.UNKNOWN.value, envelope)
+            await event_bus.publish(Events.Device.UNKNOWN, envelope)
 
     async def add_device(self, device_id: str, protocol: str, config: dict, token: str | None = None):
         """Adiciona Dispositivos Dinamicamente."""

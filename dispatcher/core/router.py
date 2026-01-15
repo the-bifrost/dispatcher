@@ -3,20 +3,17 @@
 import logging
 
 from core.event_bus import event_bus
+from core.events import Events
 from utils.envelope import Envelope
-from utils.const import EventState
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
-EVENT_DEVICE_VALIDATED = "device.message_validated"
-
-
 class Router:
     def __init__(self):
         # O Router só ouve mensagens que já foram aprovadas pelo Registry
-        event_bus.subscribe(EVENT_DEVICE_VALIDATED, self.route_message)
+        event_bus.subscribe(Events.Device.VALIDATED, self.route_message)
 
     async def route_message(self, data: dict):
         """Recebe um dicionário contendo o envelope e os dados do dispositivo."""
@@ -32,7 +29,7 @@ class Router:
             # Ex: send_to_mqtt, send_to_lora
             # os protocolos devem estar ouvindo "send_to_" + protocol_name
 
-            event_topic = f"{EventState.SEND_TO.value}{target_protocol}"
+            event_topic = f"{Events.Protocol.SEND_PREFIX}{target_protocol}"
             await event_bus.publish(event_topic, envelope)
 
         else:

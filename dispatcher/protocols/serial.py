@@ -4,9 +4,8 @@ import logging
 from typing import Optional, cast
 
 from core.event_bus import event_bus
-from utils.const import EventState, ProtocolEvent
+from core.events import Events
 from utils.envelope import Envelope, parse_envelope
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ class BaseSerialProtocol(asyncio.Protocol):
         _LOGGER.info("[%s] Porta aberta: %s", self.protocol_name, transport.get_extra_info('name'))
 
         # Registra nos eventos do EventBus
-        event_bus.subscribe(f"{EventState.SEND_TO.value}{self.protocol_name.lower()}", self.handle_event)
+        event_bus.subscribe(f"{Events.Protocol.SEND_PREFIX}{self.protocol_name.lower()}", self.handle_event)
 
     def data_received(self, data: bytes) -> None:
         """Calback acionado de forma assíncrona pelo event loop."""
@@ -42,7 +41,7 @@ class BaseSerialProtocol(asyncio.Protocol):
                     envelope = parse_envelope(decoded_line)
 
                     if envelope:
-                        asyncio.create_task(event_bus.publish(ProtocolEvent.MESSAGE_RECEIVED.value, envelope))
+                        asyncio.create_task(event_bus.publish(Events.Protocol.RECEIVED, envelope))
 
                     else:
                         _LOGGER.warning("[%s] JSON Inválido ou fora do envelope: %s", self.protocol_name, decoded_line)
