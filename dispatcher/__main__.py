@@ -63,7 +63,7 @@ def main() -> int:
     settings = load_configuration(config_dir / "config.yaml")
 
     _LOGGER.info("Configurando LOGGER de eventos")
-    setup_logging(config_dir / settings.PATH_LOGGER_CONFIG)
+    setup_logging(config_dir / settings.logger_config_path)
 
     # Inicia a Dispatcher
     try:

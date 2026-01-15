@@ -14,9 +14,8 @@ _LOGGER = logging.getLogger(__name__)
 class Settings(BaseSettings):
     """Carrega informações de um arquivo .env, caso não existir, salva como um valor padrão."""
 
-    # Caminhos de Arquivos
-    PATH_DEVICE_REGISTRY: str = "devices.json"
-    PATH_LOGGER_CONFIG: str = "logs.yaml"
+    # Configurações de logs
+    logger_config_path: str = "logs.yaml"
 
     # env_file='.env' carrega as variáveis de ambiente
     # extra='allow' permite carregar tudo o que estiver no Yaml 
