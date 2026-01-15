@@ -9,13 +9,13 @@ rest_api:
   port: 8000
   db_path: "config/db/devices.db"
 
-lora:
-  port: "/dev/pts/11"
-  baudrate: 9600
+#lora:
+#  port: "/dev/pts/11"
+#  baudrate: 9600
 
-espnow:
-  port: "/dev/ttyAMA2" 
-  baudrate: 9600
+#espnow:
+#  port: "/dev/ttyAMA2" 
+#  baudrate: 9600
 
 #mqtt:
 #  hosst: "localhost"
