@@ -1,4 +1,5 @@
 # .ignore customizados
+*.db
 *.log.*
 .local_workspace/
 
