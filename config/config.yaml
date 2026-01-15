@@ -1,6 +1,15 @@
 
-device_registry: "devices.json"
-logger_config: "logs.yaml"
+logger_config_path: "logs.yaml"
+
+registry_db_path: "db/devices.db"
+registry_db_schema_path: "db/schema.sql"
+
+#lora:
+#  port: "/dev/pts/11"
+#  baudrate: 9600
+
+
+
 
 lora:
   port: "/dev/pts/13"
