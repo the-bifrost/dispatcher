@@ -39,7 +39,7 @@ async def setup_protocol(raw_config: dict):
 
     transport, protocol = await serial_asyncio.create_serial_connection(
         loop,
-        LoraProtocol,
+        EspNowProtocol,
         config.port,
         config.baudrate
     )
