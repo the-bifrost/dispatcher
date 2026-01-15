@@ -46,7 +46,7 @@ def get_arguments() -> argparse.Namespace:
         "--config",
         metavar="path_to_config_dir",
         default="config/",
-        help="Caminho para o diretório de configuração que contém config.toml e logs.toml"
+        help="Caminho para o diretório de configuração que contém config.yaml e logs.yaml"
     )
 
     return parser.parse_args()
@@ -62,7 +62,7 @@ def main() -> int:
     _LOGGER.info("Usando diretório de configuração: %s", config_dir)
     settings = load_configuration(config_dir / "config.yaml")
 
-    _LOGGER.info("Configurando LOGGER de eventos")
+    _LOGGER.info("Configurando logger de eventos")
     setup_logging(config_dir / settings.logger_config_path)
 
     # Inicia a Dispatcher
