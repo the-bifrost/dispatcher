@@ -9,3 +9,8 @@ pyserial-asyncio
 
 # Persistência dos dados
 aiosqlite
+
+# API e Servidor Web
+fastapi
+uvicorn
+websockets
