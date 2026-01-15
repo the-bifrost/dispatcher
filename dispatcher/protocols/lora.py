@@ -19,7 +19,7 @@ class LoraConfig(BaseModel):
 
 class LoraProtocol(BaseSerialProtocol):
     def __init__(self):
-        super().__init__(protocol_name="lora")
+        super().__init__(protocol_name=__name__)
 
 
 async def setup_protocol(raw_config: dict):
