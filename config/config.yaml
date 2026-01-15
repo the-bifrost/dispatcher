@@ -4,20 +4,18 @@ logger_config_path: "logs.yaml"
 registry_db_path: "db/devices.db"
 registry_db_schema_path: "db/schema.sql"
 
-#lora:
-#  port: "/dev/pts/11"
-#  baudrate: 9600
-
-
-
+rest_api:
+  host: "0.0.0.0"
+  port: 8000
+  db_path: "config/db/devices.db"
 
 lora:
-  port: "/dev/pts/13"
-  baudrate: 9600 
+  port: "/dev/pts/11"
+  baudrate: 9600
 
-#espnow:
-#  port: "/dev/ttyAMA2" 
-#  baudrate: 9600
+espnow:
+  port: "/dev/ttyAMA2" 
+  baudrate: 9600
 
 #mqtt:
 #  hosst: "localhost"
