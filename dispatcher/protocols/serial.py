@@ -4,7 +4,7 @@ import logging
 from typing import Optional, cast
 
 from core.event_bus import event_bus
-from utils.const import EventState
+from utils.const import EventState, ProtocolEvent
 from utils.envelope import Envelope, parse_envelope
 
 
@@ -42,7 +42,7 @@ class BaseSerialProtocol(asyncio.Protocol):
                     envelope = parse_envelope(decoded_line)
 
                     if envelope:
-                        asyncio.create_task(event_bus.publish(EventState.STATE_CHANGED.value, envelope))
+                        asyncio.create_task(event_bus.publish(ProtocolEvent.MESSAGE_RECEIVED.value, envelope))
 
                     else:
                         _LOGGER.warning("[%s] JSON Inválido ou fora do envelope: %s", self.protocol_name, decoded_line)
