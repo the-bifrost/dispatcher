@@ -16,6 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 
 class DeviceRegistry:
     def __init__(self, db_path: Path, schema_path: Path):
+        _LOGGER.info("Inicializando o DeviceRegistry")
+
         self.db_path = db_path
         self.schema_path = schema_path
 
@@ -38,6 +40,9 @@ class DeviceRegistry:
         
         except Exception as e:
             _LOGGER.exception("Erro fatal ao inicializar DB: %s", e)
+            
+        _LOGGER.info("Registry Inicializado!")
+        
 
     async def get_device(self, device_id: str) -> dict | None:
         """Busca dispositivo no banco pelo ID."""
