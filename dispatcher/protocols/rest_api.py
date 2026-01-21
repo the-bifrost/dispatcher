@@ -165,14 +165,16 @@ async def bridge_event_to_websocket(data):
 
 # --- Setup do Protocolo (Padrão Bifrost) ---
 
-async def setup_protocol(raw_config: dict):
+async def setup_protocol(config_dir: Path, raw_config: dict):
     """
     Função chamada pelo start.py para iniciar o servidor Uvicorn.
     """
     global _API_CONFIG
+    global _CONFIG_DIR
     try:
         config = ApiConfig(**raw_config)
         _API_CONFIG = config
+        _CONFIG_DIR = config_dir
     except Exception as e:
         _LOGGER.error("Configuração da API inválida: %s", e)
         return
