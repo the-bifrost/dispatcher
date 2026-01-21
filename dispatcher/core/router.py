@@ -11,10 +11,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Router:
-    def __init__(self):
+        _LOGGER.info("Iniciando Router de Mensagens.")
+
+
         # O Router só ouve mensagens que já foram aprovadas pelo Registry
         event_bus.subscribe(Events.Device.VALIDATED, self.route_message)
 
+        _LOGGER.info("Sucesso ao iniciar o Router!")
     async def route_message(self, data: dict):
         """Recebe um dicionário contendo o envelope e os dados do dispositivo."""
 

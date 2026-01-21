@@ -52,10 +52,10 @@ async def start(config_dir: Path, settings: Settings):
     
     await registry.initialize()
 
-    _LOGGER.info("Iniciando Router de Mensagens.")
+    # Inicia o roteamento de mensagens
     router = Router()
     _LOGGER.info("Sucesso ao iniciar o Router!")
-
+    
     _LOGGER.info("Carregando Protocolos")
     await discover_protocols(settings)
     _LOGGER.info("Finalizou inicialização dos protocolos!")
