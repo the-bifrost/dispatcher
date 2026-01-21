@@ -1,4 +1,5 @@
 """Registro de Dispositivos da Dispatcher."""
+
 import logging
 import json
 from pathlib import Path
@@ -8,6 +9,7 @@ import aiosqlite
 from core.event_bus import event_bus
 from core.events import Events
 from utils.envelope import Envelope
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ class DeviceRegistry:
                 row = await cursor.fetchone()
                 if row:
                     data = dict(row)
-                    # Desserializa a config (JSON string -> Dict)
+
                     if 'config' in data and isinstance(data['config'], str):
                         try:
                             data['config'] = json.loads(data['config'])
