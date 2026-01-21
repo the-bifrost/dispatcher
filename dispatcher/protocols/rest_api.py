@@ -11,6 +11,7 @@ import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from pathlib import Path
 
 from core.event_bus import event_bus
 from core.events import Events
@@ -40,6 +41,8 @@ app.add_middleware(
 
 # Variável global para guardar a config (necessário para as rotas acessarem o DB)
 _API_CONFIG: ApiConfig | None = None
+_CONFIG_DIR: Path | None = None
+
 
 # --- Rotas da API ---
 
@@ -56,9 +59,14 @@ async def get_devices():
     """
     if not _API_CONFIG:
         raise HTTPException(status_code=500, detail="API não configurada")
+    
+    if not _CONFIG_DIR:
+        raise HTTPException(status_code=500, detail="Caminho de Configurações está Nulo")
+    
+    absolute_db_path = _CONFIG_DIR / _API_CONFIG.db_path
 
     try:
-        async with aiosqlite.connect(_API_CONFIG.db_path) as db:
+        async with aiosqlite.connect(absolute_db_path) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute("SELECT * FROM devices") as cursor:
                 rows = await cursor.fetchall()
