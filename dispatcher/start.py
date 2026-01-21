@@ -39,18 +39,18 @@ async def discover_protocols(settings: Settings):
                 asyncio.create_task(module.setup_protocol(conf))
         else:
             _LOGGER.debug("Módulo %s não tem uma função de setup!", module_name)
-
+    _LOGGER.info("Finalizou inicialização dos protocolos!")
+    
 
 async def start(config_dir: Path, settings: Settings):
     _LOGGER.info("Inicializando a Bifrost")
 
-    _LOGGER.info("Inicializando o DeviceRegistry")
+    # inicializa o registro de dispositivos
     registry = DeviceRegistry(
         db_path=config_dir / settings.registry_db_path, 
         schema_path=config_dir / settings.registry_db_schema_path)
     
     await registry.initialize()
-    _LOGGER.info("Registry Inicializado!")
 
     _LOGGER.info("Iniciando Router de Mensagens.")
     router = Router()
