@@ -1,8 +1,8 @@
 """Start Async Bifrost."""
 
 import asyncio
-import logging
 import importlib
+import logging
 import pkgutil
 from pathlib import Path
 
@@ -10,6 +10,7 @@ import protocols
 from core.device_registry import DeviceRegistry
 from core.router import Router
 from settings import Settings
+
 
 _LOGGER = logging.getLogger(__name__)
 
