@@ -15,7 +15,7 @@ from settings import Settings
 _LOGGER = logging.getLogger(__name__)
 
 
-async def discover_protocols(settings: Settings):
+async def discover_protocols(config_dir: Path, settings: Settings):
     """Descobre e faz a importação de todos os protocolos, só faz setup dos que estão configurados."""
     _LOGGER.debug("Descobrindo Protocolos...")
 
@@ -36,7 +36,7 @@ async def discover_protocols(settings: Settings):
 
             if conf:
                 _LOGGER.info("Existe uma configuração para o módulo %s, inicando uma task assíncrona", module_name)
-                asyncio.create_task(module.setup_protocol(conf))
+                asyncio.create_task(module.setup_protocol(config_dir, conf))
         else:
             _LOGGER.debug("Módulo %s não tem uma função de setup!", module_name)
     _LOGGER.info("Finalizou inicialização dos protocolos!")
@@ -53,12 +53,10 @@ async def start(config_dir: Path, settings: Settings):
     await registry.initialize()
 
     # Inicia o roteamento de mensagens
-    router = Router()
-    _LOGGER.info("Sucesso ao iniciar o Router!")
+    router = Router(registry)
     
-    _LOGGER.info("Carregando Protocolos")
-    await discover_protocols(settings)
-    _LOGGER.info("Finalizou inicialização dos protocolos!")
+    # Faz a descoberta, configuração e inicialização dos protocolos
+    await discover_protocols(config_dir, settings)
 
     _LOGGER.info("Bifrost Iniciada!")
     await asyncio.Future()

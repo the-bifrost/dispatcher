@@ -1,6 +1,7 @@
 """Protocolo EspNow que herda de BaseSerialProtocol."""
 import asyncio
 import logging
+from pathlib import Path
 
 import serial_asyncio
 from pydantic import BaseModel
@@ -22,7 +23,7 @@ class EspNowProtocol(BaseSerialProtocol):
         super().__init__(protocol_name=__name__)
 
 
-async def setup_protocol(raw_config: dict):
+async def setup_protocol(config_dir: Path, raw_config: dict):
     """Faz o setup assíncrono do EspNow."""
     
     # Carrega configurações
