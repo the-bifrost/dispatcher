@@ -8,6 +8,7 @@ import aiosqlite
 
 from core.event_bus import event_bus
 from core.events import Events
+from utils.device import Device
 from utils.envelope import Envelope
 
 
@@ -44,8 +45,8 @@ class DeviceRegistry:
         _LOGGER.info("Registry Inicializado!")
         
 
-    async def get_device(self, device_id: str) -> dict | None:
-        """Busca dispositivo no banco pelo ID."""
+    async def get_device(self, device_id: str) -> Device | None:
+        """Busca dispositivo no banco pelo ID e retorna um Device."""
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
             # Assume que 'id' no banco bate com o 'src' do envelope
@@ -59,9 +60,17 @@ class DeviceRegistry:
                             data['config'] = json.loads(data['config'])
                         except json.JSONDecodeError:
                             data['config'] = {}
-                    return data
-        return None
 
+                    if data.get('config') is None:
+                        data['config'] = {}
+                    
+                    try:
+                        return Device(**data)
+                    except Exception as e:
+                        _LOGGER.error(f"Erro ao converter dados do banco para modelo Device: {e}")
+                        return None
+        return None
+    
     async def handle_protocol_message(self, envelope: Envelope):
         """Calback acionado pelo EventBus, recebe envelope bruto, consulta SQLite, publica resultado."""
         sender_id = envelope.src
