@@ -2,11 +2,6 @@
 
 class Events:
     """Classe Global de Eventos."""
-    class System:
-        """Eventos do ciclo de vida da dispatcher."""
-        STARTUP = "system.startup"
-        SHUTDOWN = "system.shutdown"
-        ERROR = "system.error"
 
     class Protocol:
         """Eventos de entrada/saída bruta de dados."""
