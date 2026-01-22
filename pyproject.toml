@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dispatcher"
-version = "2.2.0"
+version = "2.2.1"
 description = "Despacha mensagens entre dispositivos de acordo com o protocolo."
 readme = "README.md"
 requires-python = ">=3.10"
