@@ -3,3 +3,8 @@ name = "dispatcher"
 version = "2.2.0"
 description = "Despacha mensagens entre dispositivos de acordo com o protocolo."
 readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Thales Martins", email = "thalesdiniz30@gmail.com"},
+    { name = "Kerlon Ribeiro", email = "mitokerlon1227@gmail.com"}
+]
