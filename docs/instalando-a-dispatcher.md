@@ -25,6 +25,6 @@ pip install -e .
 
 Agora você pode rodar a dispatcher de qualquer diretório usando o comando
 
-````bash
+```bash
 bifrost
 ```
