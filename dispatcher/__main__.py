@@ -7,8 +7,8 @@ import logging.config
 import sys
 from pathlib import Path
 
-from settings import load_config_file, load_configuration
-from start import start
+from .settings import load_config_file, load_configuration
+from .start import start
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
