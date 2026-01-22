@@ -20,12 +20,16 @@ async def discover_protocols(config_dir: Path, settings: Settings):
     _LOGGER.debug("Descobrindo Protocolos...")
 
     for loader, module_name, is_pkg in pkgutil.iter_modules(protocols.__path__):
+
         _LOGGER.debug("Descoberto módulo %s", module_name)
 
         try:
-            module = importlib.import_module(f"protocols.{module_name}")
+            module = importlib.import_module(f"{protocols.__name__}.{module_name}")
         except ModuleNotFoundError as e:
-            _LOGGER.warning("Módulo %s não foi encontrado.", module_name)
+            if e.name == module_name or e.name == f"{protocols.__name__}.{module_name}":
+                _LOGGER.warning("Erro de caminho> Não conseguiu achar o arquivo %s.", module_name)
+            else:
+                _LOGGER.error("ERRO INTERNO em %s: O módulo existe, mas falhou ao carregar: %s", module_name, e.name)
             continue
 
         

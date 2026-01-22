@@ -13,9 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pathlib import Path
 
-from core.event_bus import event_bus
-from core.events import Events
-from utils.envelope import Envelope
+from ..core.event_bus import event_bus
+from ..core.events import Events
+from ..utils.envelope import Envelope
 
 
 _LOGGER = logging.getLogger(__name__)

@@ -6,7 +6,7 @@ from pathlib import Path
 import serial_asyncio
 from pydantic import BaseModel
 
-from protocols.serial import BaseSerialProtocol
+from .serial import BaseSerialProtocol
 
 
 _LOGGER = logging.getLogger(__name__)
