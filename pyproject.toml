@@ -8,3 +8,23 @@ authors = [
     { name = "Thales Martins", email = "thalesdiniz30@gmail.com"},
     { name = "Kerlon Ribeiro", email = "mitokerlon1227@gmail.com"}
 ]
+
+# Dependências do projeto (passando o requirements.txt para cá)
+dependencies = [
+    # Libs de Configurações
+    "pyyaml",
+    "pydantic",
+    "pydantic-settings",
+
+    # Libs de Protocolos
+    "pyserial",
+    "pyserial-asyncio",
+
+    # Persistência dos dados
+    "aiosqlite",
+
+    # API e Servidor Web
+    "fastapi",
+    "uvicorn",
+    "websockets",
+]
