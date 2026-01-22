@@ -12,10 +12,10 @@ _LOGGER = logging.getLogger(__name__)
 
 class Envelope(BaseModel):
     """Envelope padrão para mensagens da Bifrost"""
-    v: int
-    protocol: str
+    v: int = 2
     src: str
-    dst: str
+    token: str
+    protocol: str
     type: str
     ts: int = int(time.time())
     payload: Dict[str, Any] = {}
