@@ -4,10 +4,10 @@ logger_config_path: "logs.yaml"
 registry_db_path: "db/devices.db"
 registry_db_schema_path: "db/schema.sql"
 
-rest_api:
-  host: "0.0.0.0"
-  port: 8000
-  db_path: "db/devices.db"
+#rest_api:
+#  host: "0.0.0.0"
+#  port: 8000
+#  db_path: "db/devices.db"
 
 #lora:
 #  port: "/dev/pts/11"
