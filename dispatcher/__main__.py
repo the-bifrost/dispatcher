@@ -25,14 +25,7 @@ def ensure_config_path(config_dir: Path) -> None:
 
     if not config_dir.is_dir():
         _LOGGER.warning("O diretório de configuração '%s' não foi encontrado", config_dir)
-
-        # Se não existir tenta criar o diretório e seus pais, 
-        # sem erros, caso já existam.
-        try:
-            config_dir.mkdir(parents=True, exist_ok=True)
-        except OSError as e:
-            _LOGGER.error("Não foi possível criar o diretório de configuração '%s': %s", config_dir, e)
-            sys.exit(1)
+        sys.exit(1)
 
 
 def get_arguments() -> argparse.Namespace:
