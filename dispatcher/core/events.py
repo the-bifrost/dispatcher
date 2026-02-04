@@ -12,3 +12,4 @@ class Events:
         """Eventos da camada de negócio/dispositivos."""
         VALIDATED = "device.message_validated"
         UNKNOWN = "device.unknown"
+        
