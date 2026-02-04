@@ -1,5 +1,6 @@
 """Roteador de Mensagem. Lê as mudanças de estado e direciona as mensagens para seu destino correto."""
 
+import json
 import logging
 
 from ..core.device_registry import DeviceRegistry
