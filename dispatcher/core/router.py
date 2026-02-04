@@ -81,7 +81,7 @@ class Router:
         event_topic = f"{Events.Protocol.SEND_PREFIX}{target_protocol}"
 
         _LOGGER.info("Roteando mensagem de '%s' para protocolo '%s'", envelope.src, target_protocol)
-        await event_bus.publish(event_topic, envelope)
+        await event_bus.publish(event_topic, {"envelope": envelope, "device": device_destino})
 
 
 
