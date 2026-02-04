@@ -33,9 +33,5 @@ dependencies = [
     "websockets",
 ]
 
-# Comando para rodar a bifas
-[project.scripts]
-bifrost = "dispatcher.__main__:main"
-
 [tool.setuptools.packages.find]
 include = ["dispatcher"]
