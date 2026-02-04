@@ -9,9 +9,9 @@ import bcrypt
 _LOGGER = logging.getLogger(__name__)
 
 
-def generate_token(nbytes:int = 16) -> bytes:
-    """Gera um token para autenticação dos dispositivos."""
-    return secrets.token_bytes(nbytes=nbytes)
+def generate_token(nbytes:int = 16) -> str:
+    """Gera um token para autenticação dos dispositivos e retorna em string hexadecimal."""
+    return secrets.token_bytes(nbytes).hex()
 
 def hash_token(bytes_token: bytes) -> bytes:
     """Gera o hash para salvar no banco."""
