@@ -18,12 +18,14 @@ handlers:
     stream: ext://sys.stderr
   
   file:
-    class: logging.handlers.RotatingFileHandler
+    class: logging.handlers.TimedRotatingFileHandler
     level: DEBUG
     formatter: detailed
     filename: logs/bifrost.log
-    maxBytes: 10000000
-    backupCount: 3
+    when: midnight
+    interval: 1
+    backupCount: 7
+    encoding: utf8
 
 # Configurações específicas por módulo
 loggers:
@@ -38,6 +40,11 @@ loggers:
     propagate: false
     
   utils.registry:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+  
+  core.event_bus:
     level: DEBUG
     handlers: [console, file]
     propagate: false
