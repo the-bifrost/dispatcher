@@ -5,7 +5,9 @@ Essa documentação busca explicar e demonstrar os passos necessários para roda
 
 ## Instalando o Projeto
 
-- [Instalando o projeto no ambiente virtual](instalando-a-dispatcher.md)
+- [Instalando o Ambiente Virtual do Python]()
+- [Instalando o Projeto para Desenvolvimento Local](/docs/instalando-desenvolvimento.md)
+- [Instalando o Projeto como Docker Container](/docs/instalando-container.md)
 
 ## Hardware
 
