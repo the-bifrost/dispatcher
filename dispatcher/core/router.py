@@ -29,8 +29,8 @@ class Router:
         envelope: Envelope | None = data.get("envelope")
         device: Device | None = data.get("device")
 
-        if not envelope:
-            _LOGGER.warning("Recebeu um envelope inválido")
+        if not envelope or not device:
+            _LOGGER.warning("Dados incompletos para roteamento: %s", data)
             return
         
         if not device:
@@ -47,7 +47,31 @@ class Router:
 
         if envelope.type == "state":
             await self.route_state_message(envelope, device_destino)
+        
+    async def get_route_list(self, device_id: str):
+        """Consulta o banco de dados e devolve uma lista de dispositivos que devem receber a mensagem."""
+        device_list = []
 
+        async with aiosqlite.connect(self.registry.db_path) as db:
+            db.row_factory = aiosqlite.Row
+
+            query = """
+                SELECT d.id, d.protocol, d.token, d.config, d.created_at
+                FROM devices d
+                JOIN routes r ON d.id = r.target_id
+                WHERE r.source_id = ? AND r.enabled = 1
+            """
+
+            async with db.execute(query, (device_id,)) as cursor:
+                async for row in cursor:
+                    data = dict(row)
+
+                    if isinstance(data["config"], str):
+                        data["config"] = json.loads(data["config"])
+                    
+                    device_list.append(Device(**data))
+
+        return device_list
 
     async def route_state_message(self, envelope: Envelope, device_destino: Device):
         """
