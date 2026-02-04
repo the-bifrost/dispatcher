@@ -7,4 +7,4 @@ services:
       - ./logs:/app/logs
     devices:
       - "/dev/ttyAMA5:/dev/ttyAMA5" # LoRa
-    restart: always
+    restart: unless-stopped
