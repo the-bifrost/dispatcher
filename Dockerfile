@@ -1,4 +1,9 @@
-# Usa uma imagem Python leve e moderna
+#  ___ _  __            _   
+# | _ |_)/ _|_ _ ___ __| |_ 
+# | _ \ |  _| '_/ _ (_-<  _|
+# |___/_|_| |_| \___/__/\__|
+#
+
 FROM python:3.12-slim
 
 # Evita que o Python gere arquivos .pyc e permite logs em tempo real
