@@ -31,6 +31,9 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "websockets",
+
+    # Segurança
+    "bcrypt",
 ]
 
 [tool.setuptools.packages.find]
