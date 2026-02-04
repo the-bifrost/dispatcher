@@ -23,8 +23,8 @@ Após isso, faça a instalação do projeto em modo editável.
 pip install -e .
 ```
 
-Agora você pode rodar a dispatcher de qualquer diretório usando o comando
+Agora você pode rodar a dispatcher usando o comando
 
 ```bash
-bifrost
+python -m dispatcher
 ```
