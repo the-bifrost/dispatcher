@@ -1,0 +1,10 @@
+services:
+  bifrost:
+    build: .
+    volumes:
+      - ./dispatcher:/app/dispatcher
+      - ./config:/app/config
+      - ./logs:/app/logs
+    devices:
+      - "/dev/ttyAMA5:/dev/ttyAMA5" # LoRa
+    restart: always
