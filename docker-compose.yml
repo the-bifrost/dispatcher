@@ -2,9 +2,8 @@ services:
   bifrost:
     build: .
     volumes:
+      - /dev:/dev
       - ./dispatcher:/app/dispatcher
       - ./config:/app/config
       - ./logs:/app/logs
-    devices:
-      - "/dev/ttyAMA5:/dev/ttyAMA5" # LoRa
     restart: unless-stopped
