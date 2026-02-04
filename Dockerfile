@@ -4,20 +4,18 @@
 # |___/_|_| |_| \___/__/\__|
 #
 
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
-# Evita que o Python gere arquivos .pyc e permite logs em tempo real
+RUN apt-get update && apt-get install --no-install-recommends -y \
+        build-essential \
+        curl \
+        ca-certificates && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Define o diretório de trabalho
 WORKDIR /app
-
-# Instala dependências do sistema necessárias para serial e compilação
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
 
 # Copia arquivos de definição
 COPY pyproject.toml README.md ./
