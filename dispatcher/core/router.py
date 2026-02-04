@@ -33,19 +33,13 @@ class Router:
             _LOGGER.warning("Dados incompletos para roteamento: %s", data)
             return
         
-        if not device:
-            _LOGGER.warning("Recebeu um dispositivo inválido")
-            return
+        destinos = await self.get_route_list(envelope.src)
         
-        
-        device_destino: Device | None = await self.registry.get_device(envelope.dst)
-
-        if not device_destino:
-            _LOGGER.debug("Dispositivo destino não cadastrado.")
+        if not destinos:
+            _LOGGER.debug("Nenhuma rota ativa encontrada para o dispositivo %s", envelope.src)
             return
-
-
-        if envelope.type == "state":
+    
+        for device_destino in destinos:
             await self.route_state_message(envelope, device_destino)
         
     async def get_route_list(self, device_id: str):
