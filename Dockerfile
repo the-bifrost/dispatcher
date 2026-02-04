@@ -34,5 +34,5 @@ COPY config/ ./config/
 RUN mkdir -p logs
 
 # Comando para iniciar o Dispatcher
-ENTRYPOINT ["bifrost"]
+ENTRYPOINT ["python", "-m", "dispatcher"]
 CMD ["--config", "config/"]
