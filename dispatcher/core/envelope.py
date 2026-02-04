@@ -15,7 +15,6 @@ class Envelope(BaseModel):
     v: int
     src: str
     token: str
-    protocol: str
     type: str
     ts: int = int(time.time())
     payload: Dict[str, Any] = {}
