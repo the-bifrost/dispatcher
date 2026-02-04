@@ -1,6 +1,6 @@
-# Instalando e rodando a Dispatcher
+# Instalando o Projeto para desenvolvimento.
 
-Clone o repositório da Bifrost no seu Raspberry.
+Clone o repositório da Dispatcher no seu Raspberry.
 
 ```bash
 git clone https://github.com/the-bifrost/dispatcher.git
