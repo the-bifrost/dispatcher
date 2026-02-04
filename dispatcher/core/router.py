@@ -3,6 +3,8 @@
 import json
 import logging
 
+import aiosqlite
+
 from ..core.device_registry import DeviceRegistry
 from ..core.event_bus import event_bus
 from ..core.events import Events
