@@ -9,10 +9,14 @@ from pathlib import Path
 from . import protocols
 from .core.device_registry import DeviceRegistry
 from .core.router import Router
+from .core.history import HistoryLogger
 from .settings import Settings
 
 
 _LOGGER = logging.getLogger(__name__)
+
+async def init_sqlite():
+    pass
 
 
 async def discover_protocols(config_dir: Path, settings: Settings):
@@ -55,6 +59,9 @@ async def start(config_dir: Path, settings: Settings):
         schema_path=config_dir / settings.registry_db_schema_path)
     
     await registry.initialize()
+
+    # Inicia o histório via SQLite
+    history_logger = HistoryLogger(config_dir / settings.registry_db_path)
 
     # Inicia o roteamento de mensagens
     router = Router(registry)
