@@ -7,9 +7,9 @@ import aiosqlite
 
 from ..core.device_registry import DeviceRegistry
 from ..core.event_bus import event_bus
-from ..core.events import Events
 from ..utils.device import Device
-from ..core.envelope import Envelope
+from ..utils.envelope import Envelope
+from ..utils.events import Events
 
 
 _LOGGER = logging.getLogger(__name__)
