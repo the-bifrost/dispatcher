@@ -6,6 +6,7 @@ from typing import Optional, cast
 from ..core.event_bus import event_bus
 from ..core.events import Events
 from ..core.envelope import Envelope, parse_envelope
+from ..utils.device import Device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,11 +48,20 @@ class BaseSerialProtocol(asyncio.Protocol):
                         _LOGGER.warning("[%s] JSON Inválido ou fora do envelope: %s", self.protocol_name, decoded_line)
 
 
-    async def handle_event(self, envelope_data: Envelope):
+    async def handle_event(self, data: dict):
         """Recebe dados do EventBus e envia para a Serial."""
+        
+        envelope: Envelope | None = data.get("envelope")
+        device: Device | None = data.get("device")
+
+        if not envelope or not device:
+            _LOGGER.warning("Dados incompletos para roteamento: %s", data)
+            return
+        
+        envelope.dst = device.config
 
         if self.transport:
-            message = envelope_data.model_dump_json() + "\n"
+            message = envelope.model_dump_json() + "\n"
             self.transport.write(message.encode())
             _LOGGER.debug("[%s] Enviado via serial: %s", self.protocol_name, message.strip())
 
