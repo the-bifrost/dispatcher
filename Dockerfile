@@ -31,9 +31,6 @@ RUN pip install --no-cache-dir .
 # Copia as configurações
 COPY config/ ./config/
 
-# Cria o diretório de logs se não existir
-RUN mkdir -p logs
-
 # Comando para iniciar o Dispatcher
 ENTRYPOINT ["python", "-m", "dispatcher"]
 CMD ["--config", "config/"]
