@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ValidationError
 
@@ -15,6 +15,7 @@ class Envelope(BaseModel):
     v: int
     src: str
     token: str
+    dst: Optional[str] = None
     type: str
     ts: int = int(time.time())
     payload: Dict[str, Any] = {}
