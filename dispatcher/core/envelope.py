@@ -25,5 +25,5 @@ def parse_envelope(message: str) -> Envelope | None:
     try:
         return Envelope.model_validate_json(message)
     except ValidationError as e:
-        #_LOGGER.debug("Mensagem com formato inválido: %s", e)
+        _LOGGER.debug("Mensagem com formato inválido: %s", e)
         return None
