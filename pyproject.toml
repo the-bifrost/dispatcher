@@ -23,6 +23,7 @@ dependencies = [
     # Libs de Protocolos
     "pyserial",
     "pyserial-asyncio",
+    "aiomqtt",
 
     # Persistência dos dados
     "aiosqlite",
