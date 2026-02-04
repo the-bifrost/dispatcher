@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class Envelope(BaseModel):
     """Envelope padrão para mensagens da Bifrost"""
-    v: int = 2
+    v: int
     src: str
     token: str
     protocol: str
