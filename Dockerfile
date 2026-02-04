@@ -19,15 +19,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copia apenas os arquivos de definição primeiro para cache de camadas
+# Copia arquivos de definição
 COPY pyproject.toml README.md ./
 
-# Instala o projeto e suas dependências
-# O ponto (.) indica o diretório atual onde está o pyproject.toml
+# Copia o fonte
+COPY dispatcher/ ./dispatcher/
+
+# Instala o projeto e dependências
 RUN pip install --no-cache-dir .
 
-# Copia o código fonte e as configurações iniciais
-COPY dispatcher/ ./dispatcher/
+# Copia as configurações
 COPY config/ ./config/
 
 # Cria o diretório de logs se não existir
