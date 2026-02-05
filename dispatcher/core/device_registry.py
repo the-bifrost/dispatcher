@@ -10,6 +10,7 @@ from ..core.event_bus import event_bus
 from ..utils.device import Device
 from ..utils.envelope import Envelope
 from ..utils.events import Events
+from ..utils.token import hash_token, verify_token
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -57,20 +58,28 @@ class DeviceRegistry:
         sender_id = envelope.src
         device = await self.get_device(sender_id)
 
-        if device:
-            _LOGGER.debug("Dispositivo autenticado via DB: %s", sender_id)
-            # Publica o evento de sucesso com os dados do banco anexados
-            await event_bus.publish(Events.Device.VALIDATED, {"envelope": envelope, "device": device})
-        else:
+        if not device:
             _LOGGER.warning("Dispositivo não registrado no DB: %s", sender_id)
             await event_bus.publish(Events.Device.UNKNOWN, envelope)
+            return
+        
+        if device.token and not verify_token(envelope.token, device.token):
+            _LOGGER.error("Falha de Autenticação: Token Inválido para %s", sender_id)
+            await event_bus.publish(Events.Device.UNKNOWN, envelope)
+            return
+
+        _LOGGER.debug("Dispositivo autenticado com sucesso: %s", sender_id)
+        await event_bus.publish(Events.Device.VALIDATED, {"envelope": envelope, "device": device})
 
     async def add_device(self, device_id: str, protocol: str, config: dict, token: str | None = None):
         """Adiciona Dispositivos Dinamicamente."""
+
+        hashed_token = hash_token(token) if token else None
+
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 "INSERT OR REPLACE INTO devices (id, protocol, config, token) VALUES (?, ?, ?, ?)",
-                (device_id, protocol, json.dumps(config), token)
+                (device_id, protocol, json.dumps(config), hashed_token)
             )
             await db.commit()
             _LOGGER.info("Dispositivo %s salvo no banco.", device_id)
