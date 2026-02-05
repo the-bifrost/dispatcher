@@ -12,6 +12,7 @@ from . import protocols
 from .core.device_registry import DeviceRegistry
 from .core.router import Router
 from .core.history import History
+from .core.api import BifrostAPI
 from .settings import Settings
 
 
@@ -78,6 +79,10 @@ async def start(config_dir: Path, settings: Settings):
 
     # Inicializa o registro de dispositivos
     registry = DeviceRegistry(db_path)
+
+    # Inicia a API
+    api = BifrostAPI(host=settings.api["host"], port=settings.api["port"], registry=registry)
+    await api.start()
 
     # Inicia o histório via SQLite
     history = History(db_path)
