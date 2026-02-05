@@ -4,6 +4,7 @@ import asyncio
 import logging
 import json
 from pathlib import Path
+
 import aiomqtt
 from pydantic import BaseModel
 
