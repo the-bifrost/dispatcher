@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS devices (
     id TEXT PRIMARY KEY,
     protocol TEXT NOT NULL,
     token TEXT,
-    config TEXT
+    config TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS routes (
     enabled BOOLEAN DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    UNIQUE(source_id, target_id)
+    UNIQUE(source_id, target_id),
     FOREIGN KEY(source_id) REFERENCES devices(id) ON DELETE CASCADE,
     FOREIGN KEY(target_id) REFERENCES devices(id) ON DELETE CASCADE
 );
