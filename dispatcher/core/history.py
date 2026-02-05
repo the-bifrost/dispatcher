@@ -15,7 +15,7 @@ from ..utils.device import Device
 _LOGGER = logging.getLogger(__name__)
 
 
-class HistoryLogger:
+class History:
     def __init__(self, db_path: Path):
         self.db_path = db_path
         # Inscreve-se para ouvir apenas mensagens que passaram pela validação do Registry
