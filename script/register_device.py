@@ -16,9 +16,7 @@ async def register(device_id: str, protocol: str, config_json: str):
     
     # Inicializa o Registry
     registry = DeviceRegistry(
-        db_path=config_dir / settings.registry_db_path,
-        schema_path=config_dir / settings.registry_db_schema_path
-    )
+        db_path=config_dir / settings.registry_db_path)
     
     # Gera um novo token único para o dispositivo
     token = generate_token()
