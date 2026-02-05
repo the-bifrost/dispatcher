@@ -16,10 +16,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Router:
-    def __init__(self, registry: DeviceRegistry):
+    def __init__(self, db_path: Path):
         _LOGGER.info("Iniciando Router de Mensagens.")
 
-        self.registry = registry
+        self._db_path = db_path
 
         # O Router só ouve mensagens que já foram aprovadas pelo Registry
         event_bus.subscribe(Events.Device.VALIDATED, self.route_message)
@@ -49,7 +49,7 @@ class Router:
         """Consulta o banco de dados e devolve uma lista de dispositivos que devem receber a mensagem."""
         device_list = []
 
-        async with aiosqlite.connect(self.registry.db_path) as db:
+        async with aiosqlite.connect(self._db_path) as db:
             db.row_factory = aiosqlite.Row
 
             query = """
