@@ -19,7 +19,12 @@ def hash_token(bytes_token: str) -> bytes:
 
 def verify_token(bytes_token: str, hashed_token: bytes) -> bool:
     """Compara um token e uma hash de token. Retorna True se iguais."""
-    if bcrypt.checkpw(bytes_token.encode(), hashed_token):
-        return True
-    
-    return False
+
+    if isinstance(hashed_token, str):
+            hashed_token = hashed_token.encode('utf-8')
+
+    try:
+        return bcrypt.checkpw(bytes_token.encode(), hashed_token)
+    except Exception as e:
+        _LOGGER.error("Erro na verificação do bcrypt: %s", e)
+        return False
