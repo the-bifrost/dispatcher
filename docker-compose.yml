@@ -1,6 +1,8 @@
 services:
   bifrost:
     build: .
+    ports:
+      - "8000:8000"
     volumes:
       - /dev:/dev
       - ./dispatcher:/app/dispatcher
