@@ -10,6 +10,7 @@ import aiosqlite
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from ..core.event_bus import event_bus
 from ..core.device_registry import DeviceRegistry
@@ -20,6 +21,12 @@ from ..utils.token import generate_token
 
 
 _LOGGER = logging.getLogger(__name__)
+
+class RouteModel(BaseModel):
+    """Modelo para criação e exibição de rotas."""
+    source_id: str
+    target_id: str
+    enabled: bool = True
 
 
 app = FastAPI(title="Bifrost API", version="2.3.0")
@@ -58,6 +65,11 @@ async def get_devices(request: Request):
                     if item.get('config'):
                         try:
                             item['config'] = json.loads(item['config'])
+                        except: pass
+
+                    if item.get('token'):
+                        try:
+                            item.pop('token', None)
                         except: pass
                     results.append(item)
                 return results
@@ -98,6 +110,68 @@ async def send_message(envelope: Envelope):
     _LOGGER.info("API recebeu comando para: %s", envelope.dst)
     await event_bus.publish("protocol.message_received", envelope)
     return {"status": "queued", "envelope": envelope}
+
+# --- Rotas de Gerenciamento de Rotas ---
+
+@app.get("/routes")
+async def get_routes(request: Request):
+    """
+    Retorna todas as conexões de roteamento configuradas no sistema.
+    """
+    registry: DeviceRegistry = request.app.state.registry
+
+    try:
+        async with aiosqlite.connect(registry.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            # Seleciona todas as rotas da tabela definida no seu schema
+            async with db.execute("SELECT * FROM routes") as cursor:
+                rows = await cursor.fetchall()
+
+                results = []
+                
+                for row in rows:
+                    results.append(dict(row))
+                return results
+    except Exception as e:
+        _LOGGER.error("Erro ao ler rotas do banco de dados: %s", e)
+        raise HTTPException(status_code=500, detail=f"Erro ao recuperar rotas: {str(e)}")
+    
+
+@app.post("/routes", status_code=201)
+async def create_route(route: RouteModel, request: Request):
+    """
+    Cria ou atualiza uma rota de comunicação entre dois dispositivos.
+    """
+    registry: DeviceRegistry = request.app.state.registry
+
+    try:
+        async with aiosqlite.connect(registry.db_path) as db:
+            # Habilita chaves estrangeiras para respeitar as restrições do schema
+            await db.execute("PRAGMA foreign_keys = ON")
+            
+            # Usa INSERT OR REPLACE para lidar com a restrição UNIQUE(source_id, target_id)
+            query = """
+                INSERT OR REPLACE INTO routes (source_id, target_id, enabled)
+                VALUES (?, ?, ?)
+            """
+            await db.execute(query, (route.source_id, route.target_id, int(route.enabled)))
+            await db.commit()
+            
+        _LOGGER.info("Rota configurada: %s -> %s (Ativa: %s)", 
+                     route.source_id, route.target_id, route.enabled)
+        
+        return {"message": "Rota configurada com sucesso", "route": route}
+        
+    except aiosqlite.IntegrityError as e:
+        # Erro comum: tentar criar rota para dispositivo que não existe no banco
+        _LOGGER.error("Erro de integridade ao criar rota: %s", e)
+        raise HTTPException(
+            status_code=400, 
+            detail="Erro de integridade: Verifique se os IDs dos dispositivos existem no banco."
+        )
+    except Exception as e:
+        _LOGGER.error("Erro ao salvar rota: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- Websocket e Bridge ---
 class ConnectionManager:
