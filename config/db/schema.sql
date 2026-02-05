@@ -21,12 +21,11 @@ CREATE TABLE IF NOT EXISTS history (
 -- Tabela de Roteamento de Mensagens
 CREATE TABLE IF NOT EXISTS routes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    source_id TEXT NOT NULL,   -- Quem está enviando
-    target_id TEXT NOT NULL,   -- Quem deve receber
-    enabled BOOLEAN DEFAULT 1, -- Para ligar/desligar a rota sem deletar
+    source_id TEXT NOT NULL,
+    target_id TEXT NOT NULL,  
+    enabled BOOLEAN DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    -- Impede rotas duplicadas
     UNIQUE(source_id, target_id)
     FOREIGN KEY(source_id) REFERENCES devices(id) ON DELETE CASCADE,
     FOREIGN KEY(target_id) REFERENCES devices(id) ON DELETE CASCADE
