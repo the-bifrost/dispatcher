@@ -17,7 +17,7 @@ def hash_token(bytes_token: str) -> bytes:
     """Gera o hash para salvar no banco."""
     return bcrypt.hashpw(bytes_token.encode(), bcrypt.gensalt())
 
-def verify_token(bytes_token: str, hashed_token: bytes) -> bool:
+def verify_token(bytes_token: str, hashed_token: str | bytes) -> bool:
     """Compara um token e uma hash de token. Retorna True se iguais."""
 
     if isinstance(hashed_token, str):
