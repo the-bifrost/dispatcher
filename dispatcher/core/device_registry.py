@@ -16,34 +16,15 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceRegistry:
-    def __init__(self, db_path: Path, schema_path: Path):
+    def __init__(self, db_path: Path):
         _LOGGER.info("Inicializando o DeviceRegistry")
 
         self.db_path = db_path
-        self.schema_path = schema_path
 
         # Inscreve-se para ouvir mensagens brutas dos protocolos
         event_bus.subscribe(Events.Protocol.RECEIVED, self.handle_protocol_message)
 
-    async def initialize(self):
-        """Inicializa o banco de dados."""
-        if not self.schema_path.exists():
-            _LOGGER.error("Arquivo de schema do banco de dados não encontrado: %s", self.schema_path)
-            return
-        
-        try:
-            schema_sql = self.schema_path.read_text(encoding="utf-8")
-
-            async with aiosqlite.connect(self.db_path) as db:
-                await db.executescript(schema_sql)
-                await db.commit()
-            _LOGGER.info("DeviceRegistry inicializado com SQLite: %s", self.db_path)
-        
-        except Exception as e:
-            _LOGGER.exception("Erro fatal ao inicializar DB: %s", e)
-            
         _LOGGER.info("Registry Inicializado!")
-        
 
     async def get_device(self, device_id: str) -> Device | None:
         """Busca dispositivo no banco pelo ID e retorna um Device."""

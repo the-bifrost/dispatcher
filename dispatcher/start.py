@@ -6,6 +6,8 @@ import logging
 import pkgutil
 from pathlib import Path
 
+import aiosqlite
+
 from . import protocols
 from .core.device_registry import DeviceRegistry
 from .core.router import Router
@@ -15,8 +17,23 @@ from .settings import Settings
 
 _LOGGER = logging.getLogger(__name__)
 
-async def init_sqlite():
-    pass
+
+async def initialize_db(db_path: Path, schema_path: Path):
+    """Inicializa o banco de dados."""
+    if not schema_path.exists():
+        _LOGGER.error("Arquivo de schema do banco de dados não encontrado: %s", schema_path)
+        return
+    
+    try:
+        schema_sql = schema_path.read_text(encoding="utf-8")
+
+        async with aiosqlite.connect(db_path) as db:
+            await db.executescript(schema_sql)
+            await db.commit()
+            _LOGGER.info("Banco de dados iniciado: %s", db_path)
+
+    except Exception as e:
+        _LOGGER.exception("Erro fatal ao inicializar banco de dados: %s", db_path)
 
 
 async def discover_protocols(config_dir: Path, settings: Settings):
@@ -53,18 +70,20 @@ async def discover_protocols(config_dir: Path, settings: Settings):
 async def start(config_dir: Path, settings: Settings):
     _LOGGER.info("Inicializando a Bifrost")
 
-    # inicializa o registro de dispositivos
-    registry = DeviceRegistry(
-        db_path=config_dir / settings.registry_db_path, 
-        schema_path=config_dir / settings.registry_db_schema_path)
-    
-    await registry.initialize()
+    db_path = config_dir / settings.registry_db_path
+    schema_path = config_dir / settings.registry_db_schema_path
+
+    # Inicializa o banco de dados SQLite
+    await initialize_db(db_path=db_path, schema_path=schema_path)
+
+    # Inicializa o registro de dispositivos
+    registry = DeviceRegistry(db_path)
 
     # Inicia o histório via SQLite
-    history_logger = HistoryLogger(config_dir / settings.registry_db_path)
+    history = History(db_path)
 
     # Inicia o roteamento de mensagens
-    router = Router(registry)
+    router = Router(db_path)
     
     # Faz a descoberta, configuração e inicialização dos protocolos
     await discover_protocols(config_dir, settings)
