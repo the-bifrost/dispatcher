@@ -9,7 +9,7 @@ from pathlib import Path
 from . import protocols
 from .core.device_registry import DeviceRegistry
 from .core.router import Router
-from .core.history import HistoryLogger
+from .core.history import History
 from .settings import Settings
 
 
