@@ -14,7 +14,7 @@ class Device(BaseModel):
     """Modelo Base para Dispositivos da Bifrost."""
     id: str
     protocol: str
-    token: Optional[str] = None
+    token: Optional[str | bytes] = None
     config: Dict[str, Any] = Field(default_factory=dict)
     created_at: Optional[datetime] = None
 
