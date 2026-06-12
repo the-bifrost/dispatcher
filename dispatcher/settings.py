@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     registry_db_path: str = "db/devices.db"
     registry_db_schema_path: str = "db/schema.sql"
 
+    # Configurações do Flow Engine
+    automations_path: str = "automations.json"
+
     # env_file='.env' carrega as variáveis de ambiente
     # extra='allow' permite carregar tudo o que estiver no Yaml 
     model_config = SettingsConfigDict(env_file=".env", extra='allow')

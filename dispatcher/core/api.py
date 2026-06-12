@@ -10,10 +10,11 @@ import aiosqlite
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
 from ..core.event_bus import event_bus
 from ..core.device_registry import DeviceRegistry
+from ..core.state_machine import StateMachine
+from ..engine.flow_runner import FlowRunner
 from ..utils.device import Device
 from ..utils.envelope import Envelope
 from ..utils.events import Events
@@ -21,12 +22,6 @@ from ..utils.token import generate_token
 
 
 _LOGGER = logging.getLogger(__name__)
-
-class RouteModel(BaseModel):
-    """Modelo para criação e exibição de rotas."""
-    source_id: str
-    target_id: str
-    enabled: bool = True
 
 
 app = FastAPI(title="Bifrost API", version="2.3.0")
@@ -76,7 +71,7 @@ async def get_devices(request: Request):
     except Exception as e:
         _LOGGER.error("Erro ao ler banco de dados na api: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 @app.post("/devices", status_code=201)
 async def register_new_device(request: Request, device: Device):
     """Cadastra um novo dispositivo no banco de dados."""
@@ -94,7 +89,7 @@ async def register_new_device(request: Request, device: Device):
         )
 
         _LOGGER.info("Novo dispositivo cadastrado via API: %s", device.id)
-        
+
         return {
             "message": "Dispositivo cadastrado com sucesso",
             "device": device
@@ -102,7 +97,7 @@ async def register_new_device(request: Request, device: Device):
 
     except Exception as e:
         _LOGGER.error("Erro ao cadastrar dispositivo via API: %s", e)
-        raise HTTPException(status_code=500, detail=f"Erro interno ao salvar: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Erro interno ao salvar: {str(e)}")
 
 @app.post("/messages")
 async def send_message(envelope: Envelope):
@@ -111,67 +106,47 @@ async def send_message(envelope: Envelope):
     await event_bus.publish("protocol.message_received", envelope)
     return {"status": "queued", "envelope": envelope}
 
-# --- Rotas de Gerenciamento de Rotas ---
+# --- Estados dos dispositivos ---
 
-@app.get("/routes")
-async def get_routes(request: Request):
-    """
-    Retorna todas as conexões de roteamento configuradas no sistema.
-    """
-    registry: DeviceRegistry = request.app.state.registry
+@app.get("/states")
+async def get_states(request: Request):
+    """Retorna o último estado conhecido de todos os dispositivos."""
+    state_machine: StateMachine = request.app.state.state_machine
+    return state_machine.get_all_states()
+
+
+@app.get("/states/{device_id}")
+async def get_device_state(device_id: str, request: Request):
+    """Retorna o último estado conhecido de um dispositivo."""
+    state_machine: StateMachine = request.app.state.state_machine
+    state = state_machine.get_state(device_id)
+
+    if state is None:
+        raise HTTPException(status_code=404, detail="Estado não encontrado para este dispositivo")
+
+    return state
+
+# --- Automações (Flow Engine) ---
+
+@app.get("/automations")
+async def get_automations(request: Request):
+    """Retorna o flow de automações atualmente carregado."""
+    flow_runner: FlowRunner = request.app.state.flow_runner
+    return flow_runner.get_flow()
+
+
+@app.post("/automations")
+async def update_automations(flow: dict, request: Request):
+    """Salva um novo flow de automações e recarrega o engine sem reiniciar a Bifrost."""
+    flow_runner: FlowRunner = request.app.state.flow_runner
 
     try:
-        async with aiosqlite.connect(registry.db_path) as db:
-            db.row_factory = aiosqlite.Row
-            # Seleciona todas as rotas da tabela definida no seu schema
-            async with db.execute("SELECT * FROM routes") as cursor:
-                rows = await cursor.fetchall()
-
-                results = []
-                
-                for row in rows:
-                    results.append(dict(row))
-                return results
+        await flow_runner.save_and_reload(flow)
     except Exception as e:
-        _LOGGER.error("Erro ao ler rotas do banco de dados: %s", e)
-        raise HTTPException(status_code=500, detail=f"Erro ao recuperar rotas: {str(e)}")
-    
-
-@app.post("/routes", status_code=201)
-async def create_route(route: RouteModel, request: Request):
-    """
-    Cria ou atualiza uma rota de comunicação entre dois dispositivos.
-    """
-    registry: DeviceRegistry = request.app.state.registry
-
-    try:
-        async with aiosqlite.connect(registry.db_path) as db:
-            # Habilita chaves estrangeiras para respeitar as restrições do schema
-            await db.execute("PRAGMA foreign_keys = ON")
-            
-            # Usa INSERT OR REPLACE para lidar com a restrição UNIQUE(source_id, target_id)
-            query = """
-                INSERT OR REPLACE INTO routes (source_id, target_id, enabled)
-                VALUES (?, ?, ?)
-            """
-            await db.execute(query, (route.source_id, route.target_id, int(route.enabled)))
-            await db.commit()
-            
-        _LOGGER.info("Rota configurada: %s -> %s (Ativa: %s)", 
-                     route.source_id, route.target_id, route.enabled)
-        
-        return {"message": "Rota configurada com sucesso", "route": route}
-        
-    except aiosqlite.IntegrityError as e:
-        # Erro comum: tentar criar rota para dispositivo que não existe no banco
-        _LOGGER.error("Erro de integridade ao criar rota: %s", e)
-        raise HTTPException(
-            status_code=400, 
-            detail="Erro de integridade: Verifique se os IDs dos dispositivos existem no banco."
-        )
-    except Exception as e:
-        _LOGGER.error("Erro ao salvar rota: %s", e)
+        _LOGGER.error("Erro ao salvar automações: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+    return {"message": "Automações atualizadas e recarregadas", "flow": flow}
 
 # --- Websocket e Bridge ---
 class ConnectionManager:
@@ -194,8 +169,8 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+@app.websocket("/events")
+async def events_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
@@ -203,30 +178,45 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-async def bridge_event_to_websocket(data):
-    """Ponte EventBus -> WebSocket."""
-    try:
-        if isinstance(data, dict) and "envelope" in data:
-            msg = data["envelope"].model_dump_json()
-        elif hasattr(data, 'model_dump_json'):
-            msg = data.model_dump_json()
-        else:
-            msg = json.dumps(data, default=str)
-        await manager.broadcast(msg)
-    except Exception as e:
-        _LOGGER.error("Erro no bridge WebSocket: %s", e)
+
+def _serialize(data):
+    """Converte Envelopes/Devices e estruturas aninhadas em algo JSON-serializável."""
+    if isinstance(data, dict):
+        return {key: _serialize(value) for key, value in data.items()}
+
+    if hasattr(data, "model_dump"):
+        return data.model_dump(mode="json")
+
+    return data
+
+
+def make_bridge(event_name: str):
+    """Cria um callback que repassa eventos do EventBus para o WebSocket com um schema tipado."""
+
+    async def bridge(data):
+        try:
+            message = json.dumps({"event": event_name, "data": _serialize(data)}, default=str)
+            await manager.broadcast(message)
+        except Exception as e:
+            _LOGGER.error("Erro no bridge WebSocket (%s): %s", event_name, e)
+
+    bridge.__name__ = f"bridge_{event_name}"
+    return bridge
 
 # --- Classe e Inicialização ---
 class BifrostAPI:
-    def __init__(self, host: str, port: int, registry: DeviceRegistry):
+    def __init__(self, host: str, port: int, registry: DeviceRegistry, state_machine: StateMachine, flow_runner: FlowRunner):
         self.host = host
         self.port = port
         app.state.registry = registry
+        app.state.state_machine = state_machine
+        app.state.flow_runner = flow_runner
 
     async def start(self):
         """Inicia o servidor de forma assíncrona."""
-        event_bus.subscribe(Events.Device.VALIDATED, bridge_event_to_websocket)
-        event_bus.subscribe(Events.Device.UNKNOWN, bridge_event_to_websocket)
+        event_bus.subscribe(Events.Device.VALIDATED, make_bridge("message"))
+        event_bus.subscribe(Events.Device.UNKNOWN, make_bridge("unknown"))
+        event_bus.subscribe(Events.Device.STATE_CHANGED, make_bridge("state_changed"))
 
         config = uvicorn.Config(app=app, host=self.host, port=self.port, log_level="warning")
         server = uvicorn.Server(config)

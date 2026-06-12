@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    { "id": "n1", "type": "input", "config": { "device_id": "sensor_cozinha" } },
+    { "id": "n2", "type": "filter", "config": { "field": "temperature", "op": "gt", "value": 30 } },
+    { "id": "n3", "type": "output", "config": { "device_id": "ac_sala" } }
+  ],
+  "wires": [
+    { "from": "n1", "to": "n2" },
+    { "from": "n2", "to": "n3" }
+  ]
+}

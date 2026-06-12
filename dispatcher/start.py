@@ -10,10 +10,10 @@ import aiosqlite
 
 from . import protocols
 from .core.device_registry import DeviceRegistry
-from .core.router import Router
 from .core.history import History
 from .core.state_machine import StateMachine
 from .core.api import BifrostAPI
+from .engine.flow_runner import FlowRunner
 from .settings import Settings
 
 
@@ -85,16 +85,23 @@ async def start(config_dir: Path, settings: Settings):
     state_machine = StateMachine(db_path)
     await state_machine.restore()
 
+    # Inicia o Flow Engine com as automações definidas em automations.json
+    flow_runner = FlowRunner(config_dir / settings.automations_path, registry)
+    await flow_runner.start()
+
     # Inicia a API
-    api = BifrostAPI(host=settings.api["host"], port=settings.api["port"], registry=registry)
+    api = BifrostAPI(
+        host=settings.api["host"],
+        port=settings.api["port"],
+        registry=registry,
+        state_machine=state_machine,
+        flow_runner=flow_runner,
+    )
     await api.start()
 
     # Inicia o histório via SQLite
     history = History(db_path)
     history.start()
-
-    # Inicia o roteamento de mensagens
-    router = Router(db_path)
 
     # Faz a descoberta, configuração e inicialização dos protocolos
     await discover_protocols(config_dir, settings)
