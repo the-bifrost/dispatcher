@@ -1,5 +1,6 @@
-"""Logger de Histórico. Escuta eventos validados e persiste no SQLite."""
+"""Logger de Histórico. Escuta eventos validados e persiste no SQLite em lote."""
 
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -14,16 +15,26 @@ from ..utils.device import Device
 
 _LOGGER = logging.getLogger(__name__)
 
+BATCH_SIZE = 50
+FLUSH_INTERVAL = 5  # segundos
+
 
 class History:
     def __init__(self, db_path: Path):
         self.db_path = db_path
+        self._queue: asyncio.Queue = asyncio.Queue()
+        self._task: asyncio.Task | None = None
+
         # Inscreve-se para ouvir apenas mensagens que passaram pela validação do Registry
         event_bus.subscribe(Events.Device.VALIDATED, self.save_history)
         _LOGGER.info("HistoryLogger iniciado e monitorando: %s", Events.Device.VALIDATED)
 
+    def start(self):
+        """Inicia a task de escrita em lote no SQLite."""
+        self._task = asyncio.create_task(self._writer_loop())
+
     async def save_history(self, data: dict):
-        """Salva o payload da mensagem na tabela de history."""
+        """Enfileira o payload da mensagem para ser persistido em lote."""
         envelope: Envelope | None = data.get("envelope")
         device: Device | None = data.get("device")
 
@@ -31,18 +42,35 @@ class History:
             _LOGGER.warning("Dados incompletos para salvar histórico: %s", data)
             return
 
-        # O payload é um dicionário, precisamos converter para string JSON para o SQLite
-        payload_str = json.dumps(envelope.payload)
+        await self._queue.put((device.id, json.dumps(envelope.payload)))
 
+    async def _writer_loop(self):
+        """Mantém uma única conexão aberta e persiste registros em lote."""
+        async with aiosqlite.connect(self.db_path) as db:
+            while True:
+                batch = []
+
+                try:
+                    item = await asyncio.wait_for(self._queue.get(), timeout=FLUSH_INTERVAL)
+                    batch.append(item)
+                except asyncio.TimeoutError:
+                    continue
+
+                while len(batch) < BATCH_SIZE:
+                    try:
+                        batch.append(self._queue.get_nowait())
+                    except asyncio.QueueEmpty:
+                        break
+
+                await self._flush(db, batch)
+
+    async def _flush(self, db: aiosqlite.Connection, batch: list[tuple[str, str]]):
         try:
-            async with aiosqlite.connect(self.db_path) as db:
-                # Segue a estrutura definida no seu schema.sql
-                await db.execute(
-                    "INSERT INTO history (device_id, payload) VALUES (?, ?)",
-                    (device.id, payload_str)
-                )
-                await db.commit()
-            _LOGGER.debug("Histórico persistido para o dispositivo: %s", device.id)
-            
+            await db.executemany(
+                "INSERT INTO history (device_id, payload) VALUES (?, ?)",
+                batch,
+            )
+            await db.commit()
+            _LOGGER.debug("Histórico persistido: %d registro(s)", len(batch))
         except Exception as e:
             _LOGGER.error("Falha ao salvar histórico no banco: %s", e)

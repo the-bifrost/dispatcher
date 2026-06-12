@@ -23,28 +23,35 @@ class EventBus:
         self._listeners[event_type].append(callback)
         _LOGGER.info("Callback %s inscrito no evento '%s'", callback.__name__, event_type)
 
-    # A publicação de novos eventos é assíncrona pois a cada publicação é necessário percorrer
-    # toda a lista de _listeners.
-    #
-    # Algumas otimizações podem ser feitas para saber se realmente é necessário publciar ou não.
+    def unsubscribe(self, event_type: str, callback: Callable):
+        """Remove um callback previamente registrado para um tipo de evento."""
+        try:
+            self._listeners[event_type].remove(callback)
+            _LOGGER.info("Callback %s desinscrito do evento '%s'", callback.__name__, event_type)
+        except ValueError:
+            _LOGGER.debug("Callback %s não estava inscrito no evento '%s'", callback.__name__, event_type)
+
+    # A publicação dispara cada callback em uma task independente, para que um
+    # ouvinte lento ou travado não atrase os demais nem o próprio publish.
     async def publish(self, event_type: str, data: Any = None) -> None:
-        """Dispara um evento para todos os ouvintes."""
+        """Dispara um evento para todos os ouvintes, sem aguardar a execução deles."""
         _LOGGER.info("Publicando evento %s com data: %s", event_type, data)
 
-        if event_type not in self._listeners:
+        listeners = self._listeners.get(event_type)
+
+        if not listeners:
             _LOGGER.debug("Nenhum ouvinte para o evento '%s'", event_type)
             return
-        
-        tasks = []
 
-        for callback in self._listeners[event_type]:
-            tasks.append(callback(data))
+        for callback in listeners:
+            asyncio.create_task(self._run_callback(callback, event_type, data))
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        for callback, result in zip(self._listeners[event_type], results):
-           if isinstance(result, Exception):
-                _LOGGER.error("Erro no disparo de evento no callback '%s' para evento '%s': %s", callback.__name__, event_type, result)
+    async def _run_callback(self, callback: Callable, event_type: str, data: Any) -> None:
+        """Executa um callback isolado, registrando erros sem afetar outros ouvintes."""
+        try:
+            await callback(data)
+        except Exception as e:
+            _LOGGER.error("Erro no disparo de evento no callback '%s' para evento '%s': %s", callback.__name__, event_type, e)
 
 
 # Toda a apliação importa/usa a mesma instância do barramento de eventos.

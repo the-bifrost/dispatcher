@@ -12,6 +12,7 @@ from . import protocols
 from .core.device_registry import DeviceRegistry
 from .core.router import Router
 from .core.history import History
+from .core.state_machine import StateMachine
 from .core.api import BifrostAPI
 from .settings import Settings
 
@@ -24,7 +25,7 @@ async def initialize_db(db_path: Path, schema_path: Path):
     if not schema_path.exists():
         _LOGGER.error("Arquivo de schema do banco de dados não encontrado: %s", schema_path)
         return
-    
+
     try:
         schema_sql = schema_path.read_text(encoding="utf-8")
 
@@ -54,7 +55,7 @@ async def discover_protocols(config_dir: Path, settings: Settings):
                 _LOGGER.error("ERRO INTERNO em %s: O módulo existe, mas falhou ao carregar: %s", module_name, e.name)
             continue
 
-        
+
         # Só prossegue se tiver uma função setup protocol
         if hasattr(module, "setup_protocol"):
             _LOGGER.debug("O módulo %s tem uma função de setup", module_name)
@@ -66,7 +67,7 @@ async def discover_protocols(config_dir: Path, settings: Settings):
         else:
             _LOGGER.debug("Módulo %s não tem uma função de setup!", module_name)
     _LOGGER.info("Finalizou inicialização dos protocolos!")
-    
+
 
 async def start(config_dir: Path, settings: Settings):
     _LOGGER.info("Inicializando a Bifrost")
@@ -80,16 +81,21 @@ async def start(config_dir: Path, settings: Settings):
     # Inicializa o registro de dispositivos
     registry = DeviceRegistry(db_path)
 
+    # Inicializa a state machine e restaura o último estado conhecido de cada dispositivo
+    state_machine = StateMachine(db_path)
+    await state_machine.restore()
+
     # Inicia a API
     api = BifrostAPI(host=settings.api["host"], port=settings.api["port"], registry=registry)
     await api.start()
 
     # Inicia o histório via SQLite
     history = History(db_path)
+    history.start()
 
     # Inicia o roteamento de mensagens
     router = Router(db_path)
-    
+
     # Faz a descoberta, configuração e inicialização dos protocolos
     await discover_protocols(config_dir, settings)
 

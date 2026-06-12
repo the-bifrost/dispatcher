@@ -40,7 +40,7 @@ async def setup_protocol(config_dir: Path, raw_config: dict):
                 envelope: Envelope | None = data.get("envelope")
                 device: Device | None = data.get("device")
 
-                if not envelope or device:
+                if not envelope or not device:
                     _LOGGER.warning("Dados incompletos para roteamento: %s", data)
                     return
 
