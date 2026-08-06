@@ -1,25 +1,22 @@
 """Dispatcher API."""
 
 import asyncio
-import logging
 import json
-from typing import List
-from pathlib import Path
+import logging
 
 import aiosqlite
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from ..core.event_bus import event_bus
 from ..core.device_registry import DeviceRegistry
+from ..core.event_bus import event_bus
 from ..core.state_machine import StateMachine
 from ..engine.flow_runner import FlowRunner
 from ..utils.device import Device
 from ..utils.envelope import Envelope
 from ..utils.events import Events
 from ..utils.token import generate_token
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,6 +30,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # --- Rotas da API ---
 @app.get("/")
@@ -57,20 +55,26 @@ async def get_devices(request: Request):
                 for row in rows:
                     item = dict(row)
 
-                    if item.get('config'):
+                    if item.get("config"):
                         try:
-                            item['config'] = json.loads(item['config'])
-                        except: pass
+                            item["config"] = json.loads(item["config"])
+                        except json.JSONDecodeError:
+                            _LOGGER.warning("Configuração JSON inválida ignorada")
 
-                    if item.get('token'):
+                    if hasattr(item, "get") and item.get("token"):
                         try:
-                            item.pop('token', None)
-                        except: pass
+                            item.pop("token", None)
+                        except AttributeError as e:
+                            _LOGGER.warning(
+                                "Falha ao remover token. Formato do dado inválido (esperado dicionário): %s",
+                                e,
+                            )
                     results.append(item)
                 return results
     except Exception as e:
         _LOGGER.error("Erro ao ler banco de dados na api: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/devices", status_code=201)
 async def register_new_device(request: Request, device: Device):
@@ -85,19 +89,17 @@ async def register_new_device(request: Request, device: Device):
             device_id=device.id,
             protocol=device.protocol,
             config=device.config,
-            token=device.token
+            token=device.token,
         )
 
         _LOGGER.info("Novo dispositivo cadastrado via API: %s", device.id)
 
-        return {
-            "message": "Dispositivo cadastrado com sucesso",
-            "device": device
-        }
+        return {"message": "Dispositivo cadastrado com sucesso", "device": device}
 
     except Exception as e:
         _LOGGER.error("Erro ao cadastrar dispositivo via API: %s", e)
-        raise HTTPException(status_code=500, detail=f"Erro interno ao salvar: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro interno ao salvar: {e!s}")
+
 
 @app.post("/messages")
 async def send_message(envelope: Envelope):
@@ -106,7 +108,9 @@ async def send_message(envelope: Envelope):
     await event_bus.publish("protocol.message_received", envelope)
     return {"status": "queued", "envelope": envelope}
 
+
 # --- Estados dos dispositivos ---
+
 
 @app.get("/states")
 async def get_states(request: Request):
@@ -122,11 +126,15 @@ async def get_device_state(device_id: str, request: Request):
     state = state_machine.get_state(device_id)
 
     if state is None:
-        raise HTTPException(status_code=404, detail="Estado não encontrado para este dispositivo")
+        raise HTTPException(
+            status_code=404, detail="Estado não encontrado para este dispositivo"
+        )
 
     return state
 
+
 # --- Automações (Flow Engine) ---
+
 
 @app.get("/automations")
 async def get_automations(request: Request):
@@ -148,10 +156,11 @@ async def update_automations(flow: dict, request: Request):
 
     return {"message": "Automações atualizadas e recarregadas", "flow": flow}
 
+
 # --- Websocket e Bridge ---
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        self.active_connections: list[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -164,7 +173,12 @@ class ConnectionManager:
         for connection in self.active_connections:
             try:
                 await connection.send_text(message)
-            except: pass
+            except (RuntimeError, WebSocketDisconnect) as e:
+                _LOGGER.warning(
+                    "Falha ao enviar mensagem para cliente WebSocket. Conexão possivelmente encerrada: %s",
+                    e,
+                )
+
 
 manager = ConnectionManager()
 
@@ -195,7 +209,9 @@ def make_bridge(event_name: str):
 
     async def bridge(data):
         try:
-            message = json.dumps({"event": event_name, "data": _serialize(data)}, default=str)
+            message = json.dumps(
+                {"event": event_name, "data": _serialize(data)}, default=str
+            )
             await manager.broadcast(message)
         except Exception as e:
             _LOGGER.error("Erro no bridge WebSocket (%s): %s", event_name, e)
@@ -203,9 +219,17 @@ def make_bridge(event_name: str):
     bridge.__name__ = f"bridge_{event_name}"
     return bridge
 
+
 # --- Classe e Inicialização ---
 class BifrostAPI:
-    def __init__(self, host: str, port: int, registry: DeviceRegistry, state_machine: StateMachine, flow_runner: FlowRunner):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        registry: DeviceRegistry,
+        state_machine: StateMachine,
+        flow_runner: FlowRunner,
+    ):
         self.host = host
         self.port = port
         app.state.registry = registry
@@ -218,7 +242,9 @@ class BifrostAPI:
         event_bus.subscribe(Events.Device.UNKNOWN, make_bridge("unknown"))
         event_bus.subscribe(Events.Device.STATE_CHANGED, make_bridge("state_changed"))
 
-        config = uvicorn.Config(app=app, host=self.host, port=self.port, log_level="warning")
+        config = uvicorn.Config(
+            app=app, host=self.host, port=self.port, log_level="warning"
+        )
         server = uvicorn.Server(config)
 
         _LOGGER.info("Core API iniciada em http://%s:%s", self.host, self.port)
