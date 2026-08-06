@@ -1,0 +1,17 @@
+# Instale uma vez:  pip install pre-commit && pre-commit install
+# A partir daí, todo `git commit` roda o ruff automaticamente nos arquivos alterados.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff          # lint (com --fix)
+        args: [--fix]
+      - id: ruff-format   # formatação
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-merge-conflict
