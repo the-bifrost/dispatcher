@@ -3,7 +3,7 @@ Init dispatcher.protols
 
 De uma forma resumida, protocolos da dispatcher tem a seguinte função:
 
-1) Protocolos recebem dados brutos (via hardware ou software) 
+1) Protocolos recebem dados brutos (via hardware ou software)
 2) Convertem para o padrão Envelope
 3) Publicam o evelope no EventBus
 

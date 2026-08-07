@@ -1,11 +1,11 @@
 """Tipos de nó disponíveis no Flow Engine da Bifrost."""
 
 import logging
+from typing import ClassVar
 
 from ..core.event_bus import event_bus
 from ..utils.events import Events
 from .node import Node
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +58,11 @@ class OutputNode(Node):
         device = await self.registry.get_device(device_id)
 
         if not device:
-            _LOGGER.warning("OutputNode %s: dispositivo destino '%s' não encontrado", self.id, device_id)
+            _LOGGER.warning(
+                "OutputNode %s: dispositivo destino '%s' não encontrado",
+                self.id,
+                device_id,
+            )
             return None
 
         event_topic = f"{Events.Protocol.SEND_PREFIX}{device.protocol}"
@@ -70,7 +74,7 @@ class OutputNode(Node):
 class FilterNode(Node):
     """Deixa a mensagem passar somente se a condição configurada for verdadeira."""
 
-    OPERATORS = {
+    OPERATORS: ClassVar[dict] = {
         "eq": lambda a, b: a == b,
         "neq": lambda a, b: a != b,
         "gt": lambda a, b: a > b,
@@ -99,7 +103,12 @@ class FilterNode(Node):
             if operator(actual, expected):
                 return message
         except TypeError:
-            _LOGGER.debug("FilterNode %s: comparação inválida entre %r e %r", self.id, actual, expected)
+            _LOGGER.debug(
+                "FilterNode %s: comparação inválida entre %r e %r",
+                self.id,
+                actual,
+                expected,
+            )
 
         return None
 
@@ -131,7 +140,11 @@ class DebugNode(Node):
 
     async def process(self, message: dict) -> dict | None:
         envelope = message.get("envelope")
-        _LOGGER.info("[DEBUG %s] %s", self.id, envelope.model_dump_json() if envelope else message)
+        _LOGGER.info(
+            "[DEBUG %s] %s",
+            self.id,
+            envelope.model_dump_json() if envelope else message,
+        )
         return message
 
 

@@ -9,13 +9,12 @@ from pathlib import Path
 import aiosqlite
 
 from . import protocols
+from .core.api import BifrostAPI
 from .core.device_registry import DeviceRegistry
 from .core.history import History
 from .core.state_machine import StateMachine
-from .core.api import BifrostAPI
 from .engine.flow_runner import FlowRunner
 from .settings import Settings
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +22,9 @@ _LOGGER = logging.getLogger(__name__)
 async def initialize_db(db_path: Path, schema_path: Path):
     """Inicializa o banco de dados."""
     if not schema_path.exists():
-        _LOGGER.error("Arquivo de schema do banco de dados não encontrado: %s", schema_path)
+        _LOGGER.error(
+            "Arquivo de schema do banco de dados não encontrado: %s", schema_path
+        )
         return
 
     try:
@@ -34,7 +35,7 @@ async def initialize_db(db_path: Path, schema_path: Path):
             await db.commit()
             _LOGGER.info("Banco de dados iniciado: %s", db_path)
 
-    except Exception as e:
+    except Exception:
         _LOGGER.exception("Erro fatal ao inicializar banco de dados: %s", db_path)
 
 
@@ -43,18 +44,22 @@ async def discover_protocols(config_dir: Path, settings: Settings):
     _LOGGER.debug("Descobrindo Protocolos...")
 
     for loader, module_name, is_pkg in pkgutil.iter_modules(protocols.__path__):
-
         _LOGGER.debug("Descoberto módulo %s", module_name)
 
         try:
             module = importlib.import_module(f"{protocols.__name__}.{module_name}")
         except ModuleNotFoundError as e:
             if e.name == module_name or e.name == f"{protocols.__name__}.{module_name}":
-                _LOGGER.warning("Erro de caminho> Não conseguiu achar o arquivo %s.", module_name)
+                _LOGGER.warning(
+                    "Erro de caminho> Não conseguiu achar o arquivo %s.", module_name
+                )
             else:
-                _LOGGER.error("ERRO INTERNO em %s: O módulo existe, mas falhou ao carregar: %s", module_name, e.name)
+                _LOGGER.error(
+                    "ERRO INTERNO em %s: O módulo existe, mas falhou ao carregar: %s",
+                    module_name,
+                    e.name,
+                )
             continue
-
 
         # Só prossegue se tiver uma função setup protocol
         if hasattr(module, "setup_protocol"):
@@ -62,7 +67,10 @@ async def discover_protocols(config_dir: Path, settings: Settings):
             conf = getattr(settings, module_name, None)
 
             if conf:
-                _LOGGER.info("Existe uma configuração para o módulo %s, inicando uma task assíncrona", module_name)
+                _LOGGER.info(
+                    "Existe uma configuração para o módulo %s, inicando uma task assíncrona",
+                    module_name,
+                )
                 asyncio.create_task(module.setup_protocol(config_dir, conf))
         else:
             _LOGGER.debug("Módulo %s não tem uma função de setup!", module_name)

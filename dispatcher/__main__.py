@@ -24,7 +24,9 @@ def ensure_config_path(config_dir: Path) -> None:
     """Valida a existência do diretório de configuração."""
 
     if not config_dir.is_dir():
-        _LOGGER.warning("O diretório de configuração '%s' não foi encontrado", config_dir)
+        _LOGGER.warning(
+            "O diretório de configuração '%s' não foi encontrado", config_dir
+        )
         sys.exit(1)
 
 
@@ -39,7 +41,7 @@ def get_arguments() -> argparse.Namespace:
         "--config",
         metavar="path_to_config_dir",
         default="config/",
-        help="Caminho para o diretório de configuração que contém config.yaml e logs.yaml"
+        help="Caminho para o diretório de configuração que contém config.yaml e logs.yaml",
     )
 
     return parser.parse_args()
@@ -48,7 +50,7 @@ def get_arguments() -> argparse.Namespace:
 def main() -> int:
     """Start Dispatcher."""
     args = get_arguments()
-    
+
     config_dir = Path(args.config).resolve()
     ensure_config_path(config_dir)
 
@@ -65,8 +67,8 @@ def main() -> int:
     except KeyboardInterrupt:
         _LOGGER.info("Recebido comando de encerramento (CTRL + C).")
 
-    except Exception as e:
-        _LOGGER.exception("Erro fatal durante a execução: %s", e)
+    except Exception:
+        _LOGGER.exception("Erro fatal durante a execução")
         return 1
 
     _LOGGER.info("Dispatcher encerrado com sucesso.")

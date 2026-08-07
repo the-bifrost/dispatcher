@@ -11,7 +11,6 @@ from ..utils.device import Device
 from ..utils.envelope import Envelope
 from ..utils.events import Events
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -29,7 +28,9 @@ class StateMachine:
         """Carrega do SQLite o último estado conhecido de cada dispositivo."""
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
-            async with db.execute("SELECT device_id, state, attributes FROM device_states") as cursor:
+            async with db.execute(
+                "SELECT device_id, state, attributes FROM device_states"
+            ) as cursor:
                 async for row in cursor:
                     data = dict(row)
                     self._states[data["device_id"]] = {
@@ -50,7 +51,9 @@ class StateMachine:
 
         await self.set_state(device.id, envelope.type, envelope.payload)
 
-    async def set_state(self, device_id: str, state: str, attributes: dict | None = None):
+    async def set_state(
+        self, device_id: str, state: str, attributes: dict | None = None
+    ):
         """Atualiza o estado em memória, persiste no SQLite e dispara STATE_CHANGED."""
         attributes = attributes or {}
         old_state = self._states.get(device_id)
@@ -71,11 +74,14 @@ class StateMachine:
             )
             await db.commit()
 
-        await event_bus.publish(Events.Device.STATE_CHANGED, {
-            "device_id": device_id,
-            "old_state": old_state,
-            "new_state": new_state,
-        })
+        await event_bus.publish(
+            Events.Device.STATE_CHANGED,
+            {
+                "device_id": device_id,
+                "old_state": old_state,
+                "new_state": new_state,
+            },
+        )
 
     def get_state(self, device_id: str) -> dict | None:
         """Retorna o último estado conhecido de um dispositivo (em memória)."""

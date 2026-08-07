@@ -2,18 +2,18 @@
 
 import asyncio
 import logging
-import json
 from pathlib import Path
 
 import aiomqtt
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from ..core.event_bus import event_bus
+from ..utils.device import Device
 from ..utils.envelope import Envelope, parse_envelope
 from ..utils.events import Events
-from ..utils.device import Device
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class MqttConfig(BaseModel):
     host: str = "localhost"
@@ -21,18 +21,23 @@ class MqttConfig(BaseModel):
     username: str | None = None
     password: str | None = None
 
+
 async def setup_protocol(config_dir: Path, raw_config: dict):
     """Setup do protocolo MQTT."""
     try:
         config = MqttConfig(**raw_config)
-    except Exception as e:
+    except ValidationError as e:
         _LOGGER.error("Configuração MQTT inválida: %s", e)
         return
 
     async def mqtt_loop():
         """Loop principal de conexão e escuta MQTT."""
-        async with aiomqtt.Client(hostname=config.host, port=config.port, 
-                                 username=config.username, password=config.password) as client:
+        async with aiomqtt.Client(
+            hostname=config.host,
+            port=config.port,
+            username=config.username,
+            password=config.password,
+        ) as client:
             _LOGGER.info("Conectado ao Broker MQTT: %s", config.host)
 
             # --- SAÍDA: Escutar o EventBus para enviar ao MQTT ---
@@ -46,7 +51,7 @@ async def setup_protocol(config_dir: Path, raw_config: dict):
 
                 # No MQTT, o destino está na config do dispositivo (tópico)
                 topic = device.config.get("topic_out")
-                
+
                 if topic:
                     await client.publish(topic, envelope.model_dump_json())
 
@@ -54,7 +59,7 @@ async def setup_protocol(config_dir: Path, raw_config: dict):
 
             # --- ENTRADA: Escutar tópicos do Broker ---
             # Aqui subscrevemos em um tópico genérico ou pegamos do banco futuramente
-            await client.subscribe("bifrost/+/data") # Ex: bifrost/sensor01/data
+            await client.subscribe("bifrost/+/data")  # Ex: bifrost/sensor01/data
 
             async for message in client.messages:
                 payload = message.payload.decode()

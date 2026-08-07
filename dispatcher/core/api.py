@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import sqlite3
 
 import aiosqlite
 import uvicorn
@@ -71,7 +72,7 @@ async def get_devices(request: Request):
                             )
                     results.append(item)
                 return results
-    except Exception as e:
+    except sqlite3.Error as e:
         _LOGGER.error("Erro ao ler banco de dados na api: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -96,7 +97,7 @@ async def register_new_device(request: Request, device: Device):
 
         return {"message": "Dispositivo cadastrado com sucesso", "device": device}
 
-    except Exception as e:
+    except sqlite3.Error as e:
         _LOGGER.error("Erro ao cadastrar dispositivo via API: %s", e)
         raise HTTPException(status_code=500, detail=f"Erro interno ao salvar: {e!s}")
 
@@ -150,7 +151,7 @@ async def update_automations(flow: dict, request: Request):
 
     try:
         await flow_runner.save_and_reload(flow)
-    except Exception as e:
+    except (OSError, ValueError) as e:
         _LOGGER.error("Erro ao salvar automações: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -213,8 +214,8 @@ def make_bridge(event_name: str):
                 {"event": event_name, "data": _serialize(data)}, default=str
             )
             await manager.broadcast(message)
-        except Exception as e:
-            _LOGGER.error("Erro no bridge WebSocket (%s): %s", event_name, e)
+        except Exception:
+            _LOGGER.exception("Erro interno no bridge WebSocket (%s)", event_name)
 
     bridge.__name__ = f"bridge_{event_name}"
     return bridge

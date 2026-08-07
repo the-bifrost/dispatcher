@@ -1,17 +1,17 @@
 """Registro de Dispositivos da Dispatcher."""
 
-import logging
 import json
+import logging
 from pathlib import Path
 
 import aiosqlite
+from pydantic import ValidationError
 
 from ..core.event_bus import event_bus
 from ..utils.device import Device
 from ..utils.envelope import Envelope
 from ..utils.events import Events
 from ..utils.token import hash_token, verify_token
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,27 +32,31 @@ class DeviceRegistry:
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
             # Assume que 'id' no banco bate com o 'src' do envelope
-            async with db.execute("SELECT * FROM devices WHERE id = ?", (device_id,)) as cursor:
+            async with db.execute(
+                "SELECT * FROM devices WHERE id = ?", (device_id,)
+            ) as cursor:
                 row = await cursor.fetchone()
                 if row:
                     data = dict(row)
 
-                    if 'config' in data and isinstance(data['config'], str):
+                    if "config" in data and isinstance(data["config"], str):
                         try:
-                            data['config'] = json.loads(data['config'])
+                            data["config"] = json.loads(data["config"])
                         except json.JSONDecodeError:
-                            data['config'] = {}
+                            data["config"] = {}
 
-                    if data.get('config') is None:
-                        data['config'] = {}
-                    
+                    if data.get("config") is None:
+                        data["config"] = {}
+
                     try:
                         return Device(**data)
-                    except Exception as e:
-                        _LOGGER.error(f"Erro ao converter dados do banco para modelo Device: {e}")
+                    except ValidationError as e:
+                        _LOGGER.error(
+                            f"Erro ao converter dados do banco para modelo Device: {e}"
+                        )
                         return None
         return None
-    
+
     async def handle_protocol_message(self, envelope: Envelope):
         """Calback acionado pelo EventBus, recebe envelope bruto, consulta SQLite, publica resultado."""
         sender_id = envelope.src
@@ -62,16 +66,20 @@ class DeviceRegistry:
             _LOGGER.warning("Dispositivo não registrado no DB: %s", sender_id)
             await event_bus.publish(Events.Device.UNKNOWN, envelope)
             return
-        
+
         if device.token and not verify_token(envelope.token, device.token):
             _LOGGER.error("Falha de Autenticação: Token Inválido para %s", sender_id)
             await event_bus.publish(Events.Device.UNKNOWN, envelope)
             return
 
         _LOGGER.debug("Dispositivo autenticado com sucesso: %s", sender_id)
-        await event_bus.publish(Events.Device.VALIDATED, {"envelope": envelope, "device": device})
+        await event_bus.publish(
+            Events.Device.VALIDATED, {"envelope": envelope, "device": device}
+        )
 
-    async def add_device(self, device_id: str, protocol: str, config: dict, token: str | None = None):
+    async def add_device(
+        self, device_id: str, protocol: str, config: dict, token: str | None = None
+    ):
         """Adiciona Dispositivos Dinamicamente."""
 
         hashed_token = hash_token(token) if token else None
@@ -79,7 +87,7 @@ class DeviceRegistry:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 "INSERT OR REPLACE INTO devices (id, protocol, config, token) VALUES (?, ?, ?, ?)",
-                (device_id, protocol, json.dumps(config), hashed_token)
+                (device_id, protocol, json.dumps(config), hashed_token),
             )
             await db.commit()
             _LOGGER.info("Dispositivo %s salvo no banco.", device_id)

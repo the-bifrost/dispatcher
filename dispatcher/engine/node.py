@@ -2,7 +2,6 @@
 
 import logging
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -18,7 +17,7 @@ class Node:
         self.id = node_id
         self.config = config
         self.registry = registry
-        self.outputs: list["Node"] = []
+        self.outputs: list[Node] = []
 
     def add_output(self, node: "Node"):
         """Conecta este nó a um nó de saída (wire)."""

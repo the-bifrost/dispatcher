@@ -9,17 +9,20 @@ api:
   port: 8000
   db_path: "db/devices.db"
 
+mqtt:
+  host: "192.168.1.60"
+  port: 1883
+  username: "tecnicon"
+  password: "haTecnicon!"
+
 #lora:
 #  port: "/dev/pts/11"
 #  baudrate: 9600
 
 #espnow:
-#  port: "/dev/ttyAMA2" 
+#  port: "/dev/ttyAMA2"
 #  baudrate: 9600
 
-#mqtt:
-#  host: "localhost"
-#  port: 1883
 
 #database:
 #  host:

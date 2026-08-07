@@ -38,4 +38,4 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["."]
+include = ["dispatcher*"]

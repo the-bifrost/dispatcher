@@ -2,23 +2,23 @@
 
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, ValidationError
-
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Envelope(BaseModel):
     """Envelope padrão para mensagens da Bifrost"""
+
     v: int
     src: str
     token: str
-    dst: Optional[str] = None
+    dst: str | None = None
     type: str
     ts: int = int(time.time())
-    payload: Dict[str, Any] = {}
+    payload: dict[str, Any] = {}
 
 
 def parse_envelope(message: str) -> Envelope | None:

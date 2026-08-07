@@ -3,15 +3,15 @@
 import asyncio
 import json
 import logging
+import sqlite3
 from pathlib import Path
 
 import aiosqlite
 
 from ..core.event_bus import event_bus
-from ..utils.events import Events
-from ..utils.envelope import Envelope
 from ..utils.device import Device
-
+from ..utils.envelope import Envelope
+from ..utils.events import Events
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +27,9 @@ class History:
 
         # Inscreve-se para ouvir apenas mensagens que passaram pela validação do Registry
         event_bus.subscribe(Events.Device.VALIDATED, self.save_history)
-        _LOGGER.info("HistoryLogger iniciado e monitorando: %s", Events.Device.VALIDATED)
+        _LOGGER.info(
+            "HistoryLogger iniciado e monitorando: %s", Events.Device.VALIDATED
+        )
 
     def start(self):
         """Inicia a task de escrita em lote no SQLite."""
@@ -51,7 +53,9 @@ class History:
                 batch = []
 
                 try:
-                    item = await asyncio.wait_for(self._queue.get(), timeout=FLUSH_INTERVAL)
+                    item = await asyncio.wait_for(
+                        self._queue.get(), timeout=FLUSH_INTERVAL
+                    )
                     batch.append(item)
                 except asyncio.TimeoutError:
                     continue
@@ -72,5 +76,5 @@ class History:
             )
             await db.commit()
             _LOGGER.debug("Histórico persistido: %d registro(s)", len(batch))
-        except Exception as e:
+        except sqlite3.Error as e:
             _LOGGER.error("Falha ao salvar histórico no banco: %s", e)
