@@ -7,7 +7,7 @@ from pathlib import Path
 import aiosqlite
 from pydantic import ValidationError
 
-from ..core.event_bus import event_bus
+from ..core.event_bus import EventBus
 from ..utils.device import Device
 from ..utils.envelope import Envelope
 from ..utils.events import Events
@@ -17,13 +17,14 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DeviceRegistry:
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: Path, event_bus: EventBus):
         _LOGGER.info("Inicializando o DeviceRegistry")
 
         self.db_path = db_path
+        self.event_bus = event_bus
 
         # Inscreve-se para ouvir mensagens brutas dos protocolos
-        event_bus.subscribe(Events.Protocol.RECEIVED, self.handle_protocol_message)
+        self.event_bus.subscribe(Events.Protocol.RECEIVED, self.handle_protocol_message)
 
         _LOGGER.info("Registry Inicializado!")
 
@@ -60,16 +61,18 @@ class DeviceRegistry:
 
         if not device:
             _LOGGER.warning("Dispositivo não registrado no DB: %s", sender_id)
-            await event_bus.publish(Events.Device.UNKNOWN, envelope)
+            await self.event_bus.publish(Events.Device.UNKNOWN, envelope)
             return
 
         if device.token and not verify_token(envelope.token, device.token):
             _LOGGER.error("Falha de Autenticação: Token Inválido para %s", sender_id)
-            await event_bus.publish(Events.Device.UNKNOWN, envelope)
+            await self.event_bus.publish(Events.Device.UNKNOWN, envelope)
             return
 
         _LOGGER.debug("Dispositivo autenticado com sucesso: %s", sender_id)
-        await event_bus.publish(Events.Device.VALIDATED, {"envelope": envelope, "device": device})
+        await self.event_bus.publish(
+            Events.Device.VALIDATED, {"envelope": envelope, "device": device}
+        )
 
     async def add_device(
         self, device_id: str, protocol: str, config: dict, token: str | None = None

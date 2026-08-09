@@ -106,7 +106,7 @@ async def register_new_device(request: Request, device: Device):
 async def send_message(envelope: Envelope):
     """Injeta comandos no barramento."""
     _LOGGER.info("API recebeu comando para: %s", envelope.dst)
-    await event_bus.publish("protocol.message_received", envelope)
+    await event_bus.publish(Events.Protocol.RECEIVED, envelope)
     return {"status": "queued", "envelope": envelope}
 
 

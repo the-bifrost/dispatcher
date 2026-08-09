@@ -8,7 +8,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from ..core.event_bus import event_bus
+from ..core.event_bus import EventBus
 from ..utils.device import Device
 from ..utils.envelope import Envelope
 from ..utils.events import Events
@@ -20,13 +20,14 @@ FLUSH_INTERVAL = 5  # segundos
 
 
 class History:
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: Path, event_bus: EventBus):
         self.db_path = db_path
         self._queue: asyncio.Queue = asyncio.Queue()
         self._task: asyncio.Task | None = None
+        self.event_bus = event_bus
 
         # Inscreve-se para ouvir apenas mensagens que passaram pela validação do Registry
-        event_bus.subscribe(Events.Device.VALIDATED, self.save_history)
+        self.event_bus.subscribe(Events.Device.VALIDATED, self.save_history)
         _LOGGER.info("HistoryLogger iniciado e monitorando: %s", Events.Device.VALIDATED)
 
     def start(self):

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from ..core.event_bus import event_bus
+from ..core.event_bus import EventBus
 from ..utils.device import Device
 from ..utils.envelope import Envelope
 from ..utils.events import Events
@@ -15,12 +15,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class StateMachine:
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: Path, event_bus: EventBus):
         self.db_path = db_path
         self._states: dict[str, dict] = {}
+        self.event_bus = event_bus
 
         # Atualiza o estado sempre que uma mensagem validada chega
-        event_bus.subscribe(Events.Device.VALIDATED, self.handle_validated)
+        self.event_bus.subscribe(Events.Device.VALIDATED, self.handle_validated)
 
         _LOGGER.info("StateMachine inicializada.")
 
@@ -72,7 +73,7 @@ class StateMachine:
             )
             await db.commit()
 
-        await event_bus.publish(
+        await self.event_bus.publish(
             Events.Device.STATE_CHANGED,
             {
                 "device_id": device_id,
