@@ -83,7 +83,3 @@ class EventBus:
                 callback.__name__,
                 event_type,
             )
-
-
-# Toda a apliação importa/usa a mesma instância do barramento de eventos.
-event_bus = EventBus()
