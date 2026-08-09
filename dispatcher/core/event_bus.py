@@ -65,6 +65,7 @@ class EventBus:
         Enfileira a task de forma segura e rastreada.
         """
         task = asyncio.create_task(self.publish(event_type=event_type, data=data))
+        self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
 
     async def wait_idle(self):
