@@ -4,7 +4,7 @@ import asyncio
 import logging
 from typing import cast
 
-from ..core.event_bus import event_bus
+from ..core.event_bus import EventBus
 from ..utils.device import Device
 from ..utils.envelope import Envelope, parse_envelope
 from ..utils.events import Events
@@ -15,10 +15,11 @@ _LOGGER = logging.getLogger(__name__)
 class BaseSerialProtocol(asyncio.Protocol):
     """Classe base para qualquer protocolo serial na Bifrost."""
 
-    def __init__(self, protocol_name: str):
+    def __init__(self, protocol_name: str, event_bus: EventBus):
         self.protocol_name = protocol_name
         self.transport: asyncio.Transport | None = None
         self._buffer = b""
+        self.event_bus = event_bus
 
     def connection_made(self, transport) -> None:
         """Salva a conexão e registra callbacks, caso a conexão for bem sucedida."""
@@ -30,7 +31,7 @@ class BaseSerialProtocol(asyncio.Protocol):
         )
 
         # Registra nos eventos do EventBus
-        event_bus.subscribe(
+        self.event_bus.subscribe(
             f"{Events.Protocol.SEND_PREFIX}{self.protocol_name.lower()}",
             self.handle_event,
         )
@@ -50,7 +51,9 @@ class BaseSerialProtocol(asyncio.Protocol):
                     envelope = parse_envelope(decoded_line)
 
                     if envelope:
-                        asyncio.create_task(event_bus.publish(Events.Protocol.RECEIVED, envelope))
+                        asyncio.create_task(
+                            self.event_bus.publish(Events.Protocol.RECEIVED, envelope)
+                        )
 
                     else:
                         _LOGGER.warning(

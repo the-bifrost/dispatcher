@@ -7,7 +7,7 @@ from pathlib import Path
 import aiomqtt
 from pydantic import BaseModel, ValidationError
 
-from ..core.event_bus import event_bus
+from ..core.event_bus import EventBus
 from ..utils.device import Device
 from ..utils.envelope import Envelope, parse_envelope
 from ..utils.events import Events
@@ -22,7 +22,7 @@ class MqttConfig(BaseModel):
     password: str | None = None
 
 
-async def setup_protocol(config_dir: Path, raw_config: dict):
+async def setup_protocol(config_dir: Path, raw_config: dict, event_bus: EventBus):
     """Setup do protocolo MQTT."""
     try:
         config = MqttConfig(**raw_config)
