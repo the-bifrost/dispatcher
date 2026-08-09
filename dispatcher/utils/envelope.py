@@ -1,10 +1,10 @@
 """Gerenciamento dos Envelopes da Bifrost."""
 
 import logging
-import time
+from time import time
 from typing import Any
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,8 +17,8 @@ class Envelope(BaseModel):
     token: str
     dst: str | None = None
     type: str
-    ts: int = int(time.time())
-    payload: dict[str, Any] = {}
+    ts: float = Field(default_factory=time)
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 def parse_envelope(message: str) -> Envelope | None:
