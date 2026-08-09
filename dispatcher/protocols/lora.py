@@ -7,6 +7,7 @@ from pathlib import Path
 import serial_asyncio
 from pydantic import BaseModel
 
+from ..core.event_bus import EventBus
 from .serial import BaseSerialProtocol
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,8 +21,8 @@ class LoraConfig(BaseModel):
 
 
 class LoraProtocol(BaseSerialProtocol):
-    def __init__(self):
-        super().__init__(protocol_name=__name__)
+    def __init__(self, event_bus: EventBus):
+        super().__init__(protocol_name="lora", event_bus=event_bus)
 
 
 async def setup_protocol(config_dir: Path, raw_config: dict):
