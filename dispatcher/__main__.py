@@ -24,17 +24,13 @@ def ensure_config_path(config_dir: Path) -> None:
     """Valida a existência do diretório de configuração."""
 
     if not config_dir.is_dir():
-        _LOGGER.warning(
-            "O diretório de configuração '%s' não foi encontrado", config_dir
-        )
+        _LOGGER.warning("O diretório de configuração '%s' não foi encontrado", config_dir)
         sys.exit(1)
 
 
 def get_arguments() -> argparse.Namespace:
     """Interpreta os argumentos da cli."""
-    parser = argparse.ArgumentParser(
-        description="Dispatcher: Nucleo central de mensagens IoT."
-    )
+    parser = argparse.ArgumentParser(description="Dispatcher: Nucleo central de mensagens IoT.")
 
     parser.add_argument(
         "-c",

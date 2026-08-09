@@ -24,9 +24,7 @@ async def register(device_id: str, protocol: str, config_json: str):
     try:
         config_dict = json.loads(config_json)
     except json.JSONDecodeError:
-        print(
-            "Erro: O campo 'config' deve ser um JSON válido. Ex: '{\"address\": \"AA:BB:CC\"}'"
-        )
+        print("Erro: O campo 'config' deve ser um JSON válido. Ex: '{\"address\": \"AA:BB:CC\"}'")
         return
 
     # Salva no SQLite
@@ -38,20 +36,14 @@ async def register(device_id: str, protocol: str, config_json: str):
     print(f"✅ Dispositivo '{device_id}' cadastrado com sucesso!")
     print(f"🔑 TOKEN: {token}")
     print("=" * 40)
-    print(
-        "⚠️ IMPORTANTE: Salve este token. Você precisará dele no código do seu ESP32/ESP8266."
-    )
+    print("⚠️ IMPORTANTE: Salve este token. Você precisará dele no código do seu ESP32/ESP8266.")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Cadastra dispositivos no SQLite da Bifrost"
-    )
+    parser = argparse.ArgumentParser(description="Cadastra dispositivos no SQLite da Bifrost")
     parser.add_argument("id", help="ID único do dispositivo (ex: termohigrometro-01)")
     parser.add_argument("protocol", help="Protocolo (lora, espnow, mqtt)")
-    parser.add_argument(
-        "config", help='JSON com configs específicas (ex: \'{"address": "MAC"}\')'
-    )
+    parser.add_argument("config", help='JSON com configs específicas (ex: \'{"address": "MAC"}\')')
 
     args = parser.parse_args()
     asyncio.run(register(args.id, args.protocol, args.config))

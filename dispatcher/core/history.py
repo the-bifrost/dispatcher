@@ -27,9 +27,7 @@ class History:
 
         # Inscreve-se para ouvir apenas mensagens que passaram pela validação do Registry
         event_bus.subscribe(Events.Device.VALIDATED, self.save_history)
-        _LOGGER.info(
-            "HistoryLogger iniciado e monitorando: %s", Events.Device.VALIDATED
-        )
+        _LOGGER.info("HistoryLogger iniciado e monitorando: %s", Events.Device.VALIDATED)
 
     def start(self):
         """Inicia a task de escrita em lote no SQLite."""
@@ -53,9 +51,7 @@ class History:
                 batch = []
 
                 try:
-                    item = await asyncio.wait_for(
-                        self._queue.get(), timeout=FLUSH_INTERVAL
-                    )
+                    item = await asyncio.wait_for(self._queue.get(), timeout=FLUSH_INTERVAL)
                     batch.append(item)
                 except asyncio.TimeoutError:
                     continue

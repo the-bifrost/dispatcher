@@ -67,14 +67,14 @@ async def get_devices(request: Request):
                             item.pop("token", None)
                         except AttributeError as e:
                             _LOGGER.warning(
-                                "Falha ao remover token. Formato do dado inválido (esperado dicionário): %s",
+                                "Falha ao remover token. Formato do dado inválido: %s",
                                 e,
                             )
                     results.append(item)
                 return results
     except sqlite3.Error as e:
         _LOGGER.error("Erro ao ler banco de dados na api: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/devices", status_code=201)
@@ -99,7 +99,7 @@ async def register_new_device(request: Request, device: Device):
 
     except sqlite3.Error as e:
         _LOGGER.error("Erro ao cadastrar dispositivo via API: %s", e)
-        raise HTTPException(status_code=500, detail=f"Erro interno ao salvar: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Erro interno ao salvar: {e!s}") from e
 
 
 @app.post("/messages")
@@ -127,9 +127,7 @@ async def get_device_state(device_id: str, request: Request):
     state = state_machine.get_state(device_id)
 
     if state is None:
-        raise HTTPException(
-            status_code=404, detail="Estado não encontrado para este dispositivo"
-        )
+        raise HTTPException(status_code=404, detail="Estado não encontrado para este dispositivo")
 
     return state
 
@@ -153,7 +151,7 @@ async def update_automations(flow: dict, request: Request):
         await flow_runner.save_and_reload(flow)
     except (OSError, ValueError) as e:
         _LOGGER.error("Erro ao salvar automações: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
     return {"message": "Automações atualizadas e recarregadas", "flow": flow}
 
@@ -176,7 +174,7 @@ class ConnectionManager:
                 await connection.send_text(message)
             except (RuntimeError, WebSocketDisconnect) as e:
                 _LOGGER.warning(
-                    "Falha ao enviar mensagem para cliente WebSocket. Conexão possivelmente encerrada: %s",
+                    "Falha ao enviar mensagem WebSocket. Conexão possivelmente encerrada: %s",
                     e,
                 )
 
@@ -210,9 +208,7 @@ def make_bridge(event_name: str):
 
     async def bridge(data):
         try:
-            message = json.dumps(
-                {"event": event_name, "data": _serialize(data)}, default=str
-            )
+            message = json.dumps({"event": event_name, "data": _serialize(data)}, default=str)
             await manager.broadcast(message)
         except Exception:
             _LOGGER.exception("Erro interno no bridge WebSocket (%s)", event_name)
@@ -243,9 +239,7 @@ class BifrostAPI:
         event_bus.subscribe(Events.Device.UNKNOWN, make_bridge("unknown"))
         event_bus.subscribe(Events.Device.STATE_CHANGED, make_bridge("state_changed"))
 
-        config = uvicorn.Config(
-            app=app, host=self.host, port=self.port, log_level="warning"
-        )
+        config = uvicorn.Config(app=app, host=self.host, port=self.port, log_level="warning")
         server = uvicorn.Server(config)
 
         _LOGGER.info("Core API iniciada em http://%s:%s", self.host, self.port)

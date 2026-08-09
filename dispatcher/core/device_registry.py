@@ -32,9 +32,7 @@ class DeviceRegistry:
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
             # Assume que 'id' no banco bate com o 'src' do envelope
-            async with db.execute(
-                "SELECT * FROM devices WHERE id = ?", (device_id,)
-            ) as cursor:
+            async with db.execute("SELECT * FROM devices WHERE id = ?", (device_id,)) as cursor:
                 row = await cursor.fetchone()
                 if row:
                     data = dict(row)
@@ -51,14 +49,12 @@ class DeviceRegistry:
                     try:
                         return Device(**data)
                     except ValidationError as e:
-                        _LOGGER.error(
-                            f"Erro ao converter dados do banco para modelo Device: {e}"
-                        )
+                        _LOGGER.error(f"Erro ao converter dados do banco para modelo Device: {e}")
                         return None
         return None
 
     async def handle_protocol_message(self, envelope: Envelope):
-        """Calback acionado pelo EventBus, recebe envelope bruto, consulta SQLite, publica resultado."""
+        """Calback acionado pelo EventBus, recebe envelope, consulta o banco, publica resultado."""
         sender_id = envelope.src
         device = await self.get_device(sender_id)
 
@@ -73,9 +69,7 @@ class DeviceRegistry:
             return
 
         _LOGGER.debug("Dispositivo autenticado com sucesso: %s", sender_id)
-        await event_bus.publish(
-            Events.Device.VALIDATED, {"envelope": envelope, "device": device}
-        )
+        await event_bus.publish(Events.Device.VALIDATED, {"envelope": envelope, "device": device})
 
     async def add_device(
         self, device_id: str, protocol: str, config: dict, token: str | None = None

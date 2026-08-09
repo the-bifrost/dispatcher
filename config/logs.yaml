@@ -49,6 +49,11 @@ loggers:
     handlers: [console, file]
     propagate: false
 
+  core:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
+
 # Configuração global (fallback)
 root:
   level: DEBUG

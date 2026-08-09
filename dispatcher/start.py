@@ -22,9 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 async def initialize_db(db_path: Path, schema_path: Path):
     """Inicializa o banco de dados."""
     if not schema_path.exists():
-        _LOGGER.error(
-            "Arquivo de schema do banco de dados não encontrado: %s", schema_path
-        )
+        _LOGGER.error("Arquivo de schema do banco de dados não encontrado: %s", schema_path)
         return
 
     try:
@@ -40,19 +38,17 @@ async def initialize_db(db_path: Path, schema_path: Path):
 
 
 async def discover_protocols(config_dir: Path, settings: Settings):
-    """Descobre e faz a importação de todos os protocolos, só faz setup dos que estão configurados."""
+    """Descobre e importa todos os protocolos, só faz setup dos que estão configurados."""
     _LOGGER.debug("Descobrindo Protocolos...")
 
-    for loader, module_name, is_pkg in pkgutil.iter_modules(protocols.__path__):
+    for _loader, module_name, _is_pkg in pkgutil.iter_modules(protocols.__path__):
         _LOGGER.debug("Descoberto módulo %s", module_name)
 
         try:
             module = importlib.import_module(f"{protocols.__name__}.{module_name}")
         except ModuleNotFoundError as e:
             if e.name == module_name or e.name == f"{protocols.__name__}.{module_name}":
-                _LOGGER.warning(
-                    "Erro de caminho> Não conseguiu achar o arquivo %s.", module_name
-                )
+                _LOGGER.warning("Erro de caminho> Não conseguiu achar o arquivo %s.", module_name)
             else:
                 _LOGGER.error(
                     "ERRO INTERNO em %s: O módulo existe, mas falhou ao carregar: %s",

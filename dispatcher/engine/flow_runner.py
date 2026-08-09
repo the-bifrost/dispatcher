@@ -62,9 +62,7 @@ class FlowRunner:
             node_class = NODE_REGISTRY.get(node_type)
 
             if not node_class:
-                _LOGGER.warning(
-                    "Tipo de nó desconhecido: %s (id=%s)", node_type, node_id
-                )
+                _LOGGER.warning("Tipo de nó desconhecido: %s (id=%s)", node_type, node_id)
                 continue
 
             self._nodes[node_id] = node_class(node_id, config, self.registry)
@@ -86,9 +84,7 @@ class FlowRunner:
 
     async def save_and_reload(self, data: dict):
         """Salva o novo flow no disco e recarrega o runner."""
-        self.flows_path.write_text(
-            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
+        self.flows_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         await self.reload()
 
     def get_flow(self) -> dict:

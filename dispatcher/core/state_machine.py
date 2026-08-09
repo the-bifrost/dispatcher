@@ -51,9 +51,7 @@ class StateMachine:
 
         await self.set_state(device.id, envelope.type, envelope.payload)
 
-    async def set_state(
-        self, device_id: str, state: str, attributes: dict | None = None
-    ):
+    async def set_state(self, device_id: str, state: str, attributes: dict | None = None):
         """Atualiza o estado em memória, persiste no SQLite e dispara STATE_CHANGED."""
         attributes = attributes or {}
         old_state = self._states.get(device_id)

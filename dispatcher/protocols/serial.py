@@ -50,9 +50,7 @@ class BaseSerialProtocol(asyncio.Protocol):
                     envelope = parse_envelope(decoded_line)
 
                     if envelope:
-                        asyncio.create_task(
-                            event_bus.publish(Events.Protocol.RECEIVED, envelope)
-                        )
+                        asyncio.create_task(event_bus.publish(Events.Protocol.RECEIVED, envelope))
 
                     else:
                         _LOGGER.warning(
@@ -76,9 +74,7 @@ class BaseSerialProtocol(asyncio.Protocol):
         if self.transport:
             message = envelope.model_dump_json() + "\n"
             self.transport.write(message.encode())
-            _LOGGER.debug(
-                "[%s] Enviado via serial: %s", self.protocol_name, message.strip()
-            )
+            _LOGGER.debug("[%s] Enviado via serial: %s", self.protocol_name, message.strip())
 
     def connection_lost(self, exc: Exception | None) -> None:
         """Lida com problemas de conexão."""

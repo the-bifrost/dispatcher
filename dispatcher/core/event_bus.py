@@ -13,7 +13,7 @@ class EventBus:
     """Barramento de Eventos para ouvir e publicar em tópicos, de forma assíncrona."""
 
     def __init__(self):
-        """Cria uma instância do Barramento de Eventos. Inicializa o dicionário de inscrições em eventos."""
+        """Cria uma instância do EventBus e inicializa o dicionário de inscrições em eventos."""
         self._listeners: dict[str, list[Callable]] = defaultdict(list)
 
     # A inscrição não precisa ser assíncrona por que apenas adiciona uma função no dicionário.
@@ -21,17 +21,13 @@ class EventBus:
     def subscribe(self, event_type: str, callback: Callable):
         """Registra um callback para escutar um tipo de evento."""
         self._listeners[event_type].append(callback)
-        _LOGGER.info(
-            "Callback %s inscrito no evento '%s'", callback.__name__, event_type
-        )
+        _LOGGER.info("Callback %s inscrito no evento '%s'", callback.__name__, event_type)
 
     def unsubscribe(self, event_type: str, callback: Callable):
         """Remove um callback previamente registrado para um tipo de evento."""
         try:
             self._listeners[event_type].remove(callback)
-            _LOGGER.info(
-                "Callback %s desinscrito do evento '%s'", callback.__name__, event_type
-            )
+            _LOGGER.info("Callback %s desinscrito do evento '%s'", callback.__name__, event_type)
         except ValueError:
             _LOGGER.debug(
                 "Callback %s não estava inscrito no evento '%s'",
@@ -54,9 +50,7 @@ class EventBus:
         for callback in listeners:
             asyncio.create_task(self._run_callback(callback, event_type, data))
 
-    async def _run_callback(
-        self, callback: Callable, event_type: str, data: Any
-    ) -> None:
+    async def _run_callback(self, callback: Callable, event_type: str, data: Any) -> None:
         """Executa um callback isolado, registrando erros sem afetar outros ouvintes."""
         try:
             await callback(data)
