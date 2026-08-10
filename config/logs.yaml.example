@@ -3,6 +3,8 @@ disable_existing_loggers: false
 
 # Formatadores de texto
 formatters:
+  colorized:
+    format: "\u001b[32m%(asctime)s\u001b[0m | \u001b[31m%(levelname)s\u001b[0m | \u001b[34m%(filename)s:%(lineno)d\u001b[0m | %(message)s"
   simple:
     format: "%(levelname)s: %(message)s"
   detailed:
@@ -14,7 +16,7 @@ handlers:
   console:
     class: logging.StreamHandler
     level: DEBUG
-    formatter: simple
+    formatter: colorized
     stream: ext://sys.stderr
 
 # Configurações específicas por módulo
@@ -29,7 +31,12 @@ loggers:
     handlers: [console]
     propagate: false
 
+  aiosqlite:
+    level: WARNING
+    handlers: [console]
+    propagate: false
+
 # Configuração global (fallback)
 root:
-  level: DEBUG
+  level: INFO
   handlers: [console]
