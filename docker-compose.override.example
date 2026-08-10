@@ -4,8 +4,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - /dev:/dev
       - ./dispatcher:/app/dispatcher
-      - ./config:/app/config
-      - ./logs:/app/logs
+      - ./config:/app/config:ro
+      - bifrost-data:/app/data
     restart: unless-stopped
+
+volumes:
+  bifrost-data:
