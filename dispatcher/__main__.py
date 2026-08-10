@@ -55,6 +55,14 @@ def get_arguments() -> argparse.Namespace:
         help="Caminho para o diretório de configuração que contém config.yaml e logs.yaml",
     )
 
+    parser.add_argument(
+        "-d",
+        "--data",
+        metavar="path_to_data_dir",
+        default="data/",
+        help="Caminho para o diretório de dados (banco de dados, estado persistente)",
+    )
+
     return parser.parse_args()
 
 
