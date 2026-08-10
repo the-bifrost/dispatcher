@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
 def load_config_file(path: Path) -> dict:
     if not path.is_file():
-        raise FileExistsError("Configuração não encontrada em: %s", path)
+        raise FileNotFoundError("Configuração não encontrada em: %s", path)
 
     content = path.read_text(encoding="utf-8")
     return yaml.safe_load(content) or {}
