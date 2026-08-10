@@ -18,8 +18,7 @@ class Settings(BaseSettings):
     logger_config_path: str = "logs.yaml"
 
     # Configurações do registry
-    registry_db_path: str = "db/devices.db"
-    registry_db_schema_path: str = "db/schema.sql"
+    registry_db_path: str = "devices.db"
 
     # Configurações do Flow Engine
     automations_path: str = "automations.json"
