@@ -10,11 +10,12 @@ from pathlib import Path
 import aiosqlite
 
 from . import protocols
+from .core.api import BifrostAPI
+from .core.device_registry import DeviceRegistry
 from .core.event_bus import EventBus
 from .core.history import History
 from .core.state_machine import StateMachine
-
-# from .engine.flow_runner import FlowRunner
+from .engine.flow_runner import FlowRunner
 from .settings import Settings
 
 _LOGGER = logging.getLogger(__name__)
@@ -81,25 +82,25 @@ async def start(config_dir: Path, data_dir: Path, settings: Settings):
     await initialize_db(db_path=db_path)
 
     # Inicializa o registro de dispositivos
-    # registry = DeviceRegistry(db_path, event_bus)
+    registry = DeviceRegistry(db_path, event_bus)
 
     # Inicializa a state machine e restaura o último estado conhecido de cada dispositivo
     state_machine = StateMachine(db_path, event_bus)
     await state_machine.restore()
 
     # Inicia o Flow Engine com as automações definidas em automations.json
-    # flow_runner = FlowRunner(config_dir / settings.automations_path, registry)
-    # await flow_runner.start()
+    flow_runner = FlowRunner(config_dir / settings.automations_path, registry, event_bus)
+    await flow_runner.start()
 
     # Inicia a API
-    # api = BifrostAPI(
-    #    host=settings.api["host"],
-    #    port=settings.api["port"],
-    #    registry=registry,
-    #    state_machine=state_machine,
-    #    flow_runner=flow_runner,
-    # )
-    # await api.start()
+    api = BifrostAPI(
+        host=settings.api.get("host", "0.0.0.0"),
+        port=settings.api.get("port", 8000),
+        registry=registry,
+        state_machine=state_machine,
+        flow_runner=flow_runner,
+    )
+    await api.start()
 
     # Inicia o histório via SQLite
     history = History(db_path, event_bus)
