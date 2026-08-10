@@ -76,12 +76,15 @@ def main() -> int:
     _LOGGER.info("Usando diretório de configuração: %s", config_dir)
     settings = load_configuration(config_dir / "config.yaml")
 
+    data_dir = Path(args.data).resolve()
+    data_dir.mkdir(parents=True, exist_ok=True)
+
     _LOGGER.info("Configurando logger de eventos")
     setup_logging(config_dir / settings.logger_config_path)
 
     # Inicia a Dispatcher
     try:
-        asyncio.run(start(config_dir, settings))
+        asyncio.run(start(config_dir, data_dir, settings))
 
     except KeyboardInterrupt:
         _LOGGER.info("Recebido comando de encerramento (CTRL + C).")
