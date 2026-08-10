@@ -1,6 +1,8 @@
-# Arquivos específicos do projeto
-*.db
-*.log.*
+# Configuraçõe e Persistência de Dados
+data/
+config/automations.json
+config/config.yaml
+config/logs.yaml
 
 # Arquivos do Docker
 docker-compose.yml

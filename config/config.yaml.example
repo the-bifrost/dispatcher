@@ -1,13 +1,11 @@
 
 logger_config_path: "logs.yaml"
-
-registry_db_path: "db/devices.db"
-registry_db_schema_path: "db/schema.sql"
+registry_db_path: "devices.db"
 
 api:
   host: "0.0.0.0"
   port: 8000
-  db_path: "db/devices.db"
+  db_path: "data/devices.db"
 
 mqtt:
   host: "192.168.1.60"
