@@ -25,6 +25,12 @@ _LOGGER = logging.getLogger(__name__)
 
 def setup_logging(path: Path):
     """Carrega a configuração dos logs do sistema."""
+    if not path.is_file():
+        _LOGGER.warning(
+            "Arquivo de configuração de log '%s' não encontrado, usando configuração padrão.", path
+        )
+        return
+
     logger_config = load_config_file(path)
     logging.config.dictConfig(logger_config)
 
