@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..core.device_registry import DeviceRegistry
-from ..core.event_bus import event_bus
+from ..core.event_bus import EventBus
 from ..core.state_machine import StateMachine
 from ..engine.flow_runner import FlowRunner
 from ..utils.device import Device
@@ -103,8 +103,10 @@ async def register_new_device(request: Request, device: Device):
 
 
 @app.post("/messages")
-async def send_message(envelope: Envelope):
+async def send_message(envelope: Envelope, request: Request):
     """Injeta comandos no barramento."""
+    event_bus: EventBus = request.app.state.event_bus
+
     _LOGGER.info("API recebeu comando para: %s", envelope.dst)
     await event_bus.publish(Events.Protocol.RECEIVED, envelope)
     return {"status": "queued", "envelope": envelope}
@@ -226,18 +228,20 @@ class BifrostAPI:
         registry: DeviceRegistry,
         state_machine: StateMachine,
         flow_runner: FlowRunner,
+        event_bus: EventBus,
     ):
         self.host = host
         self.port = port
         app.state.registry = registry
         app.state.state_machine = state_machine
         app.state.flow_runner = flow_runner
+        app.state.event_bus = event_bus
 
     async def start(self):
         """Inicia o servidor de forma assíncrona."""
-        event_bus.subscribe(Events.Device.VALIDATED, make_bridge("message"))
-        event_bus.subscribe(Events.Device.UNKNOWN, make_bridge("unknown"))
-        event_bus.subscribe(Events.Device.STATE_CHANGED, make_bridge("state_changed"))
+        app.state.event_bus.subscribe(Events.Device.VALIDATED, make_bridge("message"))
+        app.state.event_bus.subscribe(Events.Device.UNKNOWN, make_bridge("unknown"))
+        app.state.event_bus.subscribe(Events.Device.STATE_CHANGED, make_bridge("state_changed"))
 
         config = uvicorn.Config(app=app, host=self.host, port=self.port, log_level="warning")
         server = uvicorn.Server(config)

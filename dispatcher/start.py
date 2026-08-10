@@ -99,6 +99,7 @@ async def start(config_dir: Path, data_dir: Path, settings: Settings):
         registry=registry,
         state_machine=state_machine,
         flow_runner=flow_runner,
+        event_bus=event_bus,
     )
     await api.start()
 
