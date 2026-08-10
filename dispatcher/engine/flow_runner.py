@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 
 from ..core.device_registry import DeviceRegistry
-from ..core.event_bus import event_bus
+from ..core.event_bus import EventBus
 from ..utils.events import Events
 from .node import Node
 from .nodes import NODE_REGISTRY, InputNode
@@ -14,11 +14,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class FlowRunner:
-    def __init__(self, flows_path: Path, registry: DeviceRegistry):
+    def __init__(self, flows_path: Path, registry: DeviceRegistry, event_bus: EventBus):
         self.flows_path = flows_path
         self.registry = registry
         self._nodes: dict[str, Node] = {}
         self._input_nodes: list[InputNode] = []
+        self.event_bus = event_bus
 
     async def start(self):
         """Carrega o automations.json e conecta os nós pela primeira vez."""
@@ -48,7 +49,7 @@ class FlowRunner:
     def _teardown(self):
         """Desinscreve os InputNodes ativos antes de recarregar."""
         for node in self._input_nodes:
-            event_bus.unsubscribe(Events.Device.VALIDATED, node.on_event)
+            self.event_bus.unsubscribe(Events.Device.VALIDATED, node.on_event)
 
         self._nodes = {}
         self._input_nodes = []
@@ -79,7 +80,7 @@ class FlowRunner:
 
         for node in self._nodes.values():
             if isinstance(node, InputNode):
-                event_bus.subscribe(Events.Device.VALIDATED, node.on_event)
+                self.event_bus.subscribe(Events.Device.VALIDATED, node.on_event)
                 self._input_nodes.append(node)
 
     async def save_and_reload(self, data: dict):
