@@ -2,6 +2,8 @@
 
 import logging
 
+from ..core.event_bus import EventBus
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -13,11 +15,14 @@ class Node:
     o mesmo usado pelo evento Device.VALIDATED.
     """
 
-    def __init__(self, node_id: str, config: dict, registry=None):
+    def __init__(
+        self, node_id: str, config: dict, registry=None, event_bus: EventBus | None = None
+    ):
         self.id = node_id
         self.config = config
         self.registry = registry
         self.outputs: list[Node] = []
+        self.event_bus = event_bus
 
     def add_output(self, node: "Node"):
         """Conecta este nó a um nó de saída (wire)."""

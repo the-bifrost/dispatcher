@@ -3,7 +3,6 @@
 import logging
 from typing import ClassVar
 
-from ..core.event_bus import event_bus
 from ..utils.events import Events
 from .node import Node
 
@@ -66,7 +65,7 @@ class OutputNode(Node):
             return None
 
         event_topic = f"{Events.Protocol.SEND_PREFIX}{device.protocol}"
-        await event_bus.publish(event_topic, {"envelope": envelope, "device": device})
+        await self.event_bus.publish(event_topic, {"envelope": envelope, "device": device})
 
         return None
 
